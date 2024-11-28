@@ -276,23 +276,23 @@ void Leg::generateSupportPath() {
                                            motion_twist.vel.x() / motion_twist.rot.z(),
                                            current_position_b.z());
         double rho = (current_position_b - rotcenter_b).Norm();
-        RCLCPP_INFO(rclcpp::get_logger("traj gen"), "leg %d CoR %f", id, rotcenter_b.y());
+        //RCLCPP_INFO(rclcpp::get_logger("traj gen"), "leg %d CoR %f", id, rotcenter_b.y());
         // check if the rotation is not happening around one of the legs. only happens for specific v, omega, and placement of leg 1 o 4
         if (rho <= KDL::epsilon ) {
             this->path = point_path();
             this->traj = new KDL::Trajectory_Stationary(KDL::epsilon, this->path->Pos(0));
-            RCLCPP_INFO(rclcpp::get_logger("traj gen"), "leg %d path point, center of rotation", id);
+            //RCLCPP_INFO(rclcpp::get_logger("traj gen"), "leg %d path point, center of rotation", id);
             duration = MAX_DURATION;
             return;
         }
         this->path = arc_path(rotcenter_b);
 
         this->velprof = new KDL::VelocityProfile_Rectangular(motion_twist.rot.Norm() * rho);
-        RCLCPP_INFO(rclcpp::get_logger("traj gen"), "leg %d support velocity: %f", id, motion_twist.rot.Norm() * rho);
+        //RCLCPP_INFO(rclcpp::get_logger("traj gen"), "leg %d support velocity: %f", id, motion_twist.rot.Norm() * rho);
         this->velprof->SetProfile(0.0, this->path->PathLength());
         this->traj = new KDL::Trajectory_Segment(this->path, this->velprof);
         duration = traj->Duration();
-        RCLCPP_INFO(rclcpp::get_logger("traj gen"), "leg %d traj duration: %f", id, traj->Duration());
+        //RCLCPP_INFO(rclcpp::get_logger("traj gen"), "leg %d traj duration: %f", id, traj->Duration());
         return;
     }
 
@@ -312,7 +312,7 @@ KDL::Path* Leg::line_path() {
     int eta = traj_type == support ? -1 : 1;
 
     double phi = std::atan2(motion_twist.vel.y(), motion_twist.vel.x());
-    RCLCPP_INFO(rclcpp::get_logger("line_pat()"), "phi: %f", phi);
+    //RCLCPP_INFO(rclcpp::get_logger("line_pat()"), "phi: %f", phi);
     double R = std::numeric_limits<double>::infinity();
     KDL::Frame start_pose = KDL::Frame(KDL::Rotation::Identity(), current_position_b);
     double max_dist = eta * std::max(workspace.a(), std::max(workspace.b(), workspace.c()));
@@ -371,11 +371,11 @@ KDL::Path* Leg::arc_path(KDL::Vector rotcenter) {
         }
         return path.Clone();
     } catch (const KDL::Error_MotionPlanning_Circle_ToSmall& e) {
-        RCLCPP_INFO(rclcpp::get_logger("arc gen"), "leg %d circle too small", id);
+        //RCLCPP_INFO(rclcpp::get_logger("arc gen"), "leg %d circle too small", id);
         duration = 0;
         return point_path();
     } catch (const KDL::Error_MotionPlanning_Circle_No_Plane& e) {
-        RCLCPP_INFO(rclcpp::get_logger("arc gen"), "leg %d circle no plane", id);
+        //RCLCPP_INFO(rclcpp::get_logger("arc gen"), "leg %d circle no plane", id);
         duration = 0;
         return point_path();
     }

@@ -45,7 +45,7 @@ global_parameter_server:
 # teleop limits
     max_lin_velocity : 0.12
     
-    max_ang_velocity : 0.4
+    max_ang_velocity : 0.6
 
     max_body_x_euler : 0
     

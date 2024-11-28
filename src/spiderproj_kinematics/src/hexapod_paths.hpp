@@ -194,7 +194,7 @@ namespace KDL {
                 arc_length += 0.5 * ( sqrt( pow(alpha*(1 - std::cos(u1)), 2) + pow(beta*std::sin(u1), 2) ) +  
                                       sqrt( pow(alpha*(1 - std::cos(u2)), 2) + pow(beta*std::sin(u2), 2) ) ) * delta_u;
             }
-            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "arc_length: %f", arc_length);
+            //RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "arc_length: %f", arc_length);
             return arc_length;
             }
     };

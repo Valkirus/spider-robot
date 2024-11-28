@@ -63,7 +63,7 @@ void Kinematics::set_params_from_global_param_server(std::shared_future<std::vec
     
     EllipsoidWorkspace::setAxes(future.get()[26].as_double_array());
 
-    // initialize legs from global parameters
+    // initialize legs from global parameter
     double sitting_z  = future.get()[24].as_double();
 
     max_lin_velocity = future.get()[27].as_double();

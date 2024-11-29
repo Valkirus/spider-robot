@@ -51,11 +51,15 @@ private:
     void hexapod_motion_callback(const spiderproj_msgs::msg::HexapodMotion::SharedPtr);
     void body_control_callback(const spiderproj_msgs::msg::BodyControl::SharedPtr);
     void timer_callback();
+
+    void get_response(int serial_port, uint8_t count);
     int setup_serial_port(const std::string& port_name);
     uint16_t convert_angle_to_value(int servoNum ,double angle);
     void toggleRelayOn(int serial_port);
     void toggleRelayOff(int serial_port);
     void send_command(int serial_port, uint8_t startIdx, uint8_t count, uint16_t value, uint16_t value2, uint16_t value3);
+    void send_get_command(int serial_port, uint8_t startIdx, uint8_t count);
+
     void publish_joint_states();
 
     bool is_power_on;

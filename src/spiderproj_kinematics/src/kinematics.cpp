@@ -171,6 +171,30 @@ void Kinematics::timer_callback() {
     }
 }
 
+void Kinematics::send_get_command(int serial_port, uint8_t startIdx, uint8_t count) {
+    unsigned char txbuff[4];
+    txbuff[0] = 0xC7;                      // Command for GET
+    txbuff[1] = startIdx;                  // Start index (e.g., SERVO18)
+    txbuff[2] = count;                     // Number of values to retrieve
+    txbuff[3] = '\n';                      // End of command
+
+    write(serial_port, txbuff, sizeof(txbuff));
+}
+
+void Kinematics::get_response(int serial_port, uint8_t count) {
+    unsigned char rxbuff[2 * count];
+    int bytes_read = read(serial_port, rxbuff, sizeof(rxbuff));
+
+    if (bytes_read > 0) {
+        for (int i = 0; i < count; i++) {
+            uint16_t value = (rxbuff[i * 2 + 1] << 7) | rxbuff[i * 2];
+            RCLCPP_INFO(rclcpp::get_logger("Response"), "Value received : %f" , value);
+        }
+    } else {
+        RCLCPP_INFO(rclcpp::get_logger("Response"), "No response or time out!");
+    }
+}
+
 int Kinematics::setup_serial_port(const std::string& port_name) {
     int serial_port = open(port_name.c_str(), O_RDWR | O_NOCTTY | O_SYNC);
     if (serial_port == -1) {

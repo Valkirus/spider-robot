@@ -23,12 +23,14 @@ private:
     struct RC_Data_Package {
         uint8_t joy1_X;
         uint8_t joy1_Y;
+        uint8_t joy1_Button;
         uint8_t joy2_X;
         uint8_t joy2_Y;
-        uint8_t toggle1;
-        uint8_t toggle2;
-        uint8_t toggle3;
-        uint8_t toggle4;
+        uint8_t joy2_Button;
+        uint8_t slider1;
+        uint8_t slider2;
+        uint8_t pushButton1;
+        uint8_t pushButton2;
     };
 
     RC_Data_Package received_data;

@@ -72,7 +72,7 @@ private:
     KDL::Twist body_twist;
 
     KDL::Twist motion_twist; // motion velocity twist in virtual body frame
-    int gait_type = 2; // 0 for wave, 1 for ripple, 2 for tripod
+    int gait_type = 0; // 0 for wave, 1 for ripple, 2 for tripod
     bool is_omnidirectional; // false for streamlined, true or omnidirectional  
 
     double total_current;

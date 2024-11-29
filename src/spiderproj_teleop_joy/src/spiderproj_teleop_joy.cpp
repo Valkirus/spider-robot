@@ -49,11 +49,7 @@ void TeleopJoy::setJoyFlags(const sensor_msgs::msg::Joy::SharedPtr &joy){
     servo_power_off_command_flag = joy->buttons[button_H] && servo_power_flag; // press
     servo_power_on_command_flag  = joy->buttons[button_ZR] && joy->buttons[button_ZL] && !servo_power_flag; // hold
     start_command_flag           = joy->buttons[button_B]; // press
-    imu_on_off_command_flag      = joy->buttons[button_O]; // press
     omnidirectional_command_flag = joy->buttons[button_R]; // hold
-    wave_gait_command_flag       = joy->buttons[button_Y]; // press 
-    ripple_gait_command_flag     = joy->buttons[button_X]; // press
-    tripod_gait_command_flag     = joy->buttons[button_A]; // press
 }
 
 // DEFINITIONS OF CONTROL METHODS
@@ -205,6 +201,14 @@ void TeleopJoy::sendHexapodMotionData(const sensor_msgs::msg::Joy::SharedPtr joy
 // CALLBACK
 void TeleopJoy::joyCallback(const sensor_msgs::msg::Joy::SharedPtr joy) {
     setJoyFlags(joy);
+    if (servo_power_off_command_flag)
+        servoPowerOff();
+
+    if (servo_power_on_command_flag)
+        scanForPowerOn();
+    else 
+        startTime = std::chrono::steady_clock::now();
+
     if (servo_power_flag) {
         // O pressed
 
@@ -213,25 +217,16 @@ void TeleopJoy::joyCallback(const sensor_msgs::msg::Joy::SharedPtr joy) {
 
         if (start_flag) {
 
-            if (imu_on_off_command_flag)
-                imuOnOff();
-
             if (omnidirectional_command_flag)
                 setOmnidirectional();
             else
                 setStreamlined();
 
-            if (wave_gait_command_flag)
-                setGaitWave();
-            else if (ripple_gait_command_flag)
-                setGaitRipple();
-            else if (tripod_gait_command_flag)
-                setGaitTripod();
+            setGaitTripod();
 
             sendHexapodMotionData(joy);
         }
     }
-    else servoPowerOn();
 }
 
 int main(int argc, char **argv)

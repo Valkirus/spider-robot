@@ -49,9 +49,9 @@ global_parameter_server:
 
     max_body_x_euler : 0
     
-    max_body_y_euler : 0.15
+    max_body_y_euler : 0.25
     
-    max_body_z_euler : 0.15
+    max_body_z_euler : 0.2
     
     max_body_x : 0.04
     

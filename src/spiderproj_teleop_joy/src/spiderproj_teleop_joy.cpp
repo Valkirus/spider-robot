@@ -46,10 +46,9 @@ void TeleopJoy::set_params_from_global_param_server(std::shared_future<std::vect
 
 // sets control flags depending on joy input
 void TeleopJoy::setJoyFlags(const sensor_msgs::msg::Joy::SharedPtr &joy){
-    servo_power_off_command_flag = joy->buttons[button_H] && servo_power_flag; // press
-    servo_power_on_command_flag  = joy->buttons[button_ZR] && joy->buttons[button_ZL] && !servo_power_flag; // hold
-    start_command_flag           = joy->buttons[button_B]; // press
-    omnidirectional_command_flag = joy->buttons[button_R]; // hold
+    servo_power_flag             = joy->buttons[0];
+    start_command_flag           = joy->buttons[1]; // press
+    omnidirectional_command_flag = joy->buttons[2]; // hold
 }
 
 // DEFINITIONS OF CONTROL METHODS
@@ -185,14 +184,14 @@ void TeleopJoy::setOmniTwist(double s_xL, double s_yL) {
 
 void TeleopJoy::sendHexapodMotionData(const sensor_msgs::msg::Joy::SharedPtr joy) {
 
-    setBodyPose(joy->axes[axis_right_x],
-                joy->axes[axis_right_y],
-                joy->buttons[button_L]);
+    setBodyPose(joy->axes[3],
+                joy->axes[2],
+                joy->buttons[3]);
 
     //setBodyTwist(joy->axes[axis_cross_x]);
 
-    omnidirectional_command_flag ?   setOmniTwist   (joy->axes[axis_left_x], joy->axes[axis_left_y]) 
-                                   : setStreamTwist (joy->axes[axis_left_x], joy->axes[axis_left_y]);
+    omnidirectional_command_flag ?   setOmniTwist   (joy->axes[1], -joy->axes[0]) 
+                                   : setStreamTwist (joy->axes[1], -joy->axes[0]);
 
     hexapod_motion_pub_->publish(hexapod_motion);
     body_control_pub_  ->publish(body_control);
@@ -201,19 +200,22 @@ void TeleopJoy::sendHexapodMotionData(const sensor_msgs::msg::Joy::SharedPtr joy
 // CALLBACK
 void TeleopJoy::joyCallback(const sensor_msgs::msg::Joy::SharedPtr joy) {
     setJoyFlags(joy);
-    if (servo_power_off_command_flag)
-        servoPowerOff();
-
-    if (servo_power_on_command_flag)
-        scanForPowerOn();
-    else 
-        startTime = std::chrono::steady_clock::now();
+    //RCLCPP_INFO(this->get_logger(), "Received joyX: %f", joy->axes[0]);
 
     if (servo_power_flag) {
+        meta_cmd.power = true;
+        meta_cmd_pub_->publish(meta_cmd);
         // O pressed
 
-        if (start_command_flag)
-            startStop();
+        if (start_command_flag) {
+            start_flag = 1;
+            meta_cmd.is_ready = 1;
+            meta_cmd_pub_->publish(meta_cmd);
+        } else {
+            start_flag = 0;
+            meta_cmd.is_ready = 0;
+            meta_cmd.imu_status =false;
+        }
 
         if (start_flag) {
 
@@ -226,6 +228,10 @@ void TeleopJoy::joyCallback(const sensor_msgs::msg::Joy::SharedPtr joy) {
 
             sendHexapodMotionData(joy);
         }
+    }
+    else {
+        meta_cmd.power = false;
+        meta_cmd_pub_->publish(meta_cmd);
     }
 }
 

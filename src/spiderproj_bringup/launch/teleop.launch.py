@@ -6,12 +6,8 @@ def generate_launch_description():
     ld = LaunchDescription()
 
     joy_node = Node(
-        package='joy',
-        executable='joy_node',
-        parameters=[
-                {'dev': '/dev/input/js0'},
-                {'deadzone': 0.1}
-            ]
+        package='spiderproj_nrf24',
+        executable='rf24_node',
     ) 
     ld.add_action(joy_node)
     

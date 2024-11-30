@@ -21,6 +21,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/FeetGroundContact.msg"
   "msg/LegPositions.msg"
 
+  "msg/JoyData.msg"
+
   "msg/Current.msg"
   "msg/FeetContacts.msg"
   "msg/JointAngles.msg"

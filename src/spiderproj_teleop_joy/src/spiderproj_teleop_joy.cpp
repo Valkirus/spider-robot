@@ -46,9 +46,10 @@ void TeleopJoy::set_params_from_global_param_server(std::shared_future<std::vect
 
 // sets control flags depending on joy input
 void TeleopJoy::setJoyFlags(const sensor_msgs::msg::Joy::SharedPtr &joy){
-    servo_power_flag             = joy->buttons[0];
-    start_command_flag           = joy->buttons[1]; // press
-    omnidirectional_command_flag = joy->buttons[2]; // hold
+    servo_power_flag             = joy->buttons[4];
+    start_command_flag           = joy->buttons[0]; // press
+    omnidirectional_command_flag = joy->buttons[1]; // hold
+    is_dancing                   = joy->buttons[3];
 }
 
 // DEFINITIONS OF CONTROL METHODS
@@ -130,6 +131,23 @@ void TeleopJoy::setGaitTripod() {
 // find hexapod motion data
 // find body control
 void TeleopJoy::setBodyPose(double s_xR, double s_yR, int R_button_state) {
+    // Handle button state
+    //Time or progress tracking for sine wave interpolation
+    static double progress = 0.0;  // Track progress over time
+    double amplitude = s_xR * max_body_y_euler;  // Adjust amplitude based on input
+    double frequency = 1.0;  // Controls how many full oscillations occur per progress cycle
+
+    // Calculate sine wave value
+    double sine_interpolated_value = amplitude * sin(2.0 * M_PI * frequency * progress);
+
+    // Increment progress over time
+    progress += 0.05;  // Adjust speed of progression through the sine wave
+    if (progress >= 1.0) {
+        progress -= 1.0;  // Keep progress within [0, 1] for continuous looping
+    
+    }
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Sine interpolated value : %f", sine_interpolated_value);
+
     if (R_button_state == 1.0) {
         body_control.body_pose_euler_angles.euler_angles.z = 0.0;
         body_control.body_pose_euler_angles.euler_angles.y = 0.0;
@@ -138,13 +156,12 @@ void TeleopJoy::setBodyPose(double s_xR, double s_yR, int R_button_state) {
         body_control.body_pose_euler_angles.position.x = -s_xR * max_body_x;
         body_control.body_pose_euler_angles.position.y = s_yR * max_body_y;
         body_control.body_pose_euler_angles.position.z = 0.0;
-    }
-    else {
-        body_control.body_pose_euler_angles.euler_angles.z = s_yR * max_body_z_euler;
-        body_control.body_pose_euler_angles.euler_angles.y = s_xR * max_body_y_euler;
+    } else {
+        body_control.body_pose_euler_angles.euler_angles.z = -s_yR * max_body_z_euler;
+        body_control.body_pose_euler_angles.euler_angles.y = sine_interpolated_value;
         body_control.body_pose_euler_angles.euler_angles.x = 0.0;
 
-        body_control.body_pose_euler_angles.position.x = 0.0;
+        body_control.body_pose_euler_angles.position.x = -sine_interpolated_value * 0.1;
         body_control.body_pose_euler_angles.position.y = 0.0;
         body_control.body_pose_euler_angles.position.z = 0.0;
     }
@@ -183,10 +200,9 @@ void TeleopJoy::setOmniTwist(double s_xL, double s_yL) {
 }
 
 void TeleopJoy::sendHexapodMotionData(const sensor_msgs::msg::Joy::SharedPtr joy) {
-
     setBodyPose(joy->axes[3],
                 joy->axes[2],
-                joy->buttons[3]);
+                joy->buttons[2]);
 
     //setBodyTwist(joy->axes[axis_cross_x]);
 
@@ -206,15 +222,12 @@ void TeleopJoy::joyCallback(const sensor_msgs::msg::Joy::SharedPtr joy) {
         meta_cmd.power = true;
         meta_cmd_pub_->publish(meta_cmd);
         // O pressed
-
         if (start_command_flag) {
             start_flag = 1;
             meta_cmd.is_ready = 1;
-            meta_cmd_pub_->publish(meta_cmd);
         } else {
             start_flag = 0;
             meta_cmd.is_ready = 0;
-            meta_cmd.imu_status =false;
         }
 
         if (start_flag) {
@@ -238,7 +251,7 @@ void TeleopJoy::joyCallback(const sensor_msgs::msg::Joy::SharedPtr joy) {
 int main(int argc, char **argv)
 {
 	rclcpp::init(argc, argv);
-	RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Starting Pro Controller teleop converter, take care of your controller now.");
+	RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Starting Teleop");
 	
 	rclcpp::spin(std::make_shared<TeleopJoy>());
     rclcpp::shutdown();

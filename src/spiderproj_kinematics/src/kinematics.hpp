@@ -25,7 +25,7 @@
 
 #define DEFAULT_TIMESTEP 0.02
 #define TRAJ_RES 50
-#define MAX_SWING_VEL 1.5
+#define MAX_SWING_VEL 1
 
 class Kinematics : public rclcpp::Node {
 public:
@@ -52,7 +52,7 @@ private:
     void body_control_callback(const spiderproj_msgs::msg::BodyControl::SharedPtr);
     void timer_callback();
 
-    void get_response(int serial_port, uint8_t count);
+    void get_response(int serial_port);
     int setup_serial_port(const std::string& port_name);
     uint16_t convert_angle_to_value(int servoNum ,double angle);
     void toggleRelayOn(int serial_port);
@@ -65,6 +65,7 @@ private:
     bool is_power_on;
     bool is_ready;
     bool imu_status;
+    bool is_dancing;
 
     bool is_sitting;
 

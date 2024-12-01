@@ -181,15 +181,13 @@ void Kinematics::send_get_command(int serial_port, uint8_t startIdx, uint8_t cou
     write(serial_port, txbuff, sizeof(txbuff));
 }
 
-void Kinematics::get_response(int serial_port, uint8_t count) {
-    unsigned char rxbuff[2 * count];
+void Kinematics::get_response(int serial_port) {
+    unsigned char rxbuff[2];
     int bytes_read = read(serial_port, rxbuff, sizeof(rxbuff));
 
     if (bytes_read > 0) {
-        for (int i = 0; i < count; i++) {
-            uint16_t value = (rxbuff[i * 2 + 1] << 7) | rxbuff[i * 2];
-            RCLCPP_INFO(rclcpp::get_logger("Response"), "Value received : %f" , value);
-        }
+        uint16_t value = (rxbuff[0] & 0x7F) | ((rxbuff[1] & 0x7F) << 7);
+        RCLCPP_INFO(rclcpp::get_logger("Response"), "Value received : %f" , value);
     } else {
         RCLCPP_INFO(rclcpp::get_logger("Response"), "No response or time out!");
     }
@@ -240,7 +238,7 @@ std::vector<std::vector<int>> pulses = {
         {440, 1440, 2440}, // L1T, 9
         {580, 1580, 2580}, // R3C, 10
         {460, 1460, 2460}, // R3F, 11
-        {520, 1520, 2520}, // R3T, 12
+        {545, 1545, 2545}, // R3T, 12
         {520, 1520, 2520}, // R2C, 13
         {460, 1460, 2460}, // R2F, 14
         {400, 1400, 2400}, // R2T, 15
@@ -308,6 +306,8 @@ void Kinematics::send_command(int serial_port, uint8_t startIdx, uint8_t count, 
 
 void Kinematics::publish_joint_states() {
     if (params_set_flag) {
+        //send_get_command(serial_port_fd_, 25, 1);
+        //get_response(serial_port_fd_);
         //R1
         double coxa_angle_degR1 = (legs[5].getCoxaAngle() * (180.0 / M_PI) );
         double femur_angle_degR1 = (legs[5].getFemurAngle() * (180.0 / M_PI)) - 35;
@@ -514,56 +514,6 @@ void Kinematics::move_tripod() {
 
     is_in_null_pos = false;
 }
-
-void Kinematics::move_wave() {
-    int phase = Leg::tripodPhase;
-
-    this->body_pose = KDL::Frame::Identity();
-    move_body();
-
-    double cycle_duration = MAX_DURATION;
-    for (int i = phase; i < num_legs; i+=6) {
-        legs[i].generateSupportPath();
-        cycle_duration = std::min(cycle_duration, legs[i].traj->Duration());
-    } 
-
-    double speed_factor = std::sqrt(pow( (motion_twist.vel.Norm()) / (max_lin_velocity), 2) + 
-                                    pow( (motion_twist.rot.Norm()) / (max_ang_velocity), 2 ));
-
-    //RCLCPP_INFO(this->get_logger(), "speed_factor: %f", speed_factor);
-
-    cycle_duration *= speed_factor / 6;
-    if (cycle_duration <= KDL::epsilon) 
-        return;
-
-    bool not_enough_swing_time = false;
-    for (int i = (phase+1)%6; i < num_legs; i+=6) {
-        legs[i].generateTransferPathCenter(transfer_height * speed_factor, cycle_duration);
-        if (legs[i].velprof->Vel(0.5*cycle_duration) > MAX_SWING_VEL) {
-            not_enough_swing_time = true;
-        }
-    }
-
-    if (not_enough_swing_time) center_legs();
-    for (int i = (phase+1)%6; i < num_legs; i+=6) {
-        legs[i].generateTransferPathCenter(transfer_height * speed_factor, cycle_duration);
-    }
-    
-
-    double dt = cycle_duration / TRAJ_RES;
-    for (double t = 0.0; std::abs(t) < cycle_duration; t+=dt) {
-        if(!is_ready || !is_power_on) return;
-        for (int i = 0; i < num_legs; i++) {
-            legs[i].setPositionB(legs[i].traj->Pos(t).p);
-        }
-        int64_t dt_ns = static_cast<int64_t>(dt * 1e9);
-        publish_joint_states();
-        rclcpp::sleep_for(std::chrono::nanoseconds(dt_ns));
-    }
-
-    is_in_null_pos = false;
-}
-
 void Kinematics::move_body() {
 
     for (auto& leg : legs) {

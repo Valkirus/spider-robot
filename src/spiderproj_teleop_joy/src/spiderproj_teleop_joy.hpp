@@ -10,45 +10,7 @@
 #include <Eigen/Geometry>
 #include <cmath>
 
-#define PRO_CONTROLLER_AXIS_STICK_LEFT_HORIZONTAL   0
-#define PRO_CONTROLLER_AXIS_STICK_LEFT_VERTICAL     1
-#define PRO_CONTROLLER_AXIS_STICK_RIGHT_HORIZONTAL  2
-#define PRO_CONTROLLER_AXIS_STICK_RIGHT_VERTICAL    3
-#define PRO_CONTROLLER_AXIS_CROSS_HORIZONTAL        4
-#define PRO_CONTROLLER_AXIS_CROSS_VERTICAL          5
-
-#define PRO_CONTROLLER_BUTTON_ACTION_B              0
-#define PRO_CONTROLLER_BUTTON_ACTION_A              1                
-#define PRO_CONTROLLER_BUTTON_ACTION_X              2
-#define PRO_CONTROLLER_BUTTON_ACTION_Y              3
-#define PRO_CONTROLLER_BUTTON_O                     4
-#define PRO_CONTROLLER_BUTTON_SHOULDER_LEFT         5
-#define PRO_CONTROLLER_BUTTON_SHOULDER_RIGHT        6
-#define PRO_CONTROLLER_BUTTON_TRIGGER_LEFT          7
-#define PRO_CONTROLLER_BUTTON_TRIGGER_RIGHT         8
-#define PRO_CONTROLLER_BUTTON_MINUS                 9
-#define PRO_CONTROLLER_BUTTON_PLUS                 10
-#define PRO_CONTROLLER_BUTTON_H                    11
-#define PRO_CONTROLLER_BUTTON_STICK_LEFT           12
-#define PRO_CONTROLLER_BUTTON_STICK_RIGHT          13
-
-#define XBOX_CONTROLLER_AXIS_STICK_LEFT_HORIZONTAL    1
-#define XBOX_CONTROLLER_AXIS_STICK_LEFT_VERTICAL      0
-#define XBOX_CONTROLLER_AXIS_STICK_RIGHT_HORIZONTAL   4
-#define XBOX_CONTROLLER_AXIS_STICK_RIGHT_VERTICAL     3
-#define XBOX_CONTROLLER_AXIS_TRIGGER_LEFT             2
-#define XBOX_CONTROLLER_AXIS_TRIGGER_RIGHT            5
-
-#define XBOX_CONTROLLER_BUTTON_A                      0
-#define XBOX_CONTROLLER_BUTTON_B                      1
-#define XBOX_CONTROLLER_BUTTON_X                      2
-#define XBOX_CONTROLLER_BUTTON_Y                      3
-#define XBOX_CONTROLLER_BUTTON_LB                     4
-#define XBOX_CONTROLLER_BUTTON_RB                     5
-#define XBOX_CONTROLLER_BUTTON_BACK                   6
-#define XBOX_CONTROLLER_BUTTON_START                  7
-#define XBOX_CONTROLLER_BUTTON_LS                     8
-#define XBOX_CONTROLLER_BUTTON_RS                     9
+#define DEFAULT_TIMESTEP 0.1
 
 class TeleopJoy : public rclcpp::Node {
 public:
@@ -72,6 +34,7 @@ private:
     bool servo_power_flag;
     bool start_flag;
     bool imu_flag;
+    bool is_dancing;
 
     void joyCallback(const sensor_msgs::msg::Joy::SharedPtr);
 
@@ -117,48 +80,5 @@ private:
     double max_body_x;
     double max_body_y;
     double max_body_velocity_z;
-
-    // static constexpr int axis_left_y        = PRO_CONTROLLER_AXIS_STICK_LEFT_HORIZONTAL;
-    // static constexpr int axis_left_x        = PRO_CONTROLLER_AXIS_STICK_LEFT_VERTICAL;
-    // static constexpr int axis_right_y       = PRO_CONTROLLER_AXIS_STICK_RIGHT_HORIZONTAL;
-    // static constexpr int axis_right_x       = PRO_CONTROLLER_AXIS_STICK_RIGHT_VERTICAL;
-    // static constexpr int axis_cross_y       = PRO_CONTROLLER_AXIS_CROSS_HORIZONTAL;
-    // static constexpr int axis_cross_x       = PRO_CONTROLLER_AXIS_CROSS_VERTICAL;
-
-    // static constexpr int button_B           = PRO_CONTROLLER_BUTTON_ACTION_B;
-    // static constexpr int button_A           = PRO_CONTROLLER_BUTTON_ACTION_A;
-    // static constexpr int button_X           = PRO_CONTROLLER_BUTTON_ACTION_X;
-    // static constexpr int button_Y           = PRO_CONTROLLER_BUTTON_ACTION_Y;
-    // static constexpr int button_O           = PRO_CONTROLLER_BUTTON_O;
-    // static constexpr int button_L           = PRO_CONTROLLER_BUTTON_SHOULDER_LEFT;
-    // static constexpr int button_R           = PRO_CONTROLLER_BUTTON_SHOULDER_RIGHT;
-    // static constexpr int button_ZL          = PRO_CONTROLLER_BUTTON_TRIGGER_LEFT;
-    // static constexpr int button_ZR          = PRO_CONTROLLER_BUTTON_TRIGGER_RIGHT;
-    // static constexpr int button_MINUS       = PRO_CONTROLLER_BUTTON_MINUS;
-    // static constexpr int button_PLUS        = PRO_CONTROLLER_BUTTON_PLUS;
-    // static constexpr int button_H           = PRO_CONTROLLER_BUTTON_H;
-    // static constexpr int button_stick_L     = PRO_CONTROLLER_BUTTON_STICK_LEFT;
-    // static constexpr int button_stick_R     = PRO_CONTROLLER_BUTTON_STICK_RIGHT;
-
-    static constexpr int axis_left_y        = XBOX_CONTROLLER_AXIS_STICK_LEFT_VERTICAL;
-    static constexpr int axis_left_x        = XBOX_CONTROLLER_AXIS_STICK_LEFT_HORIZONTAL;
-    static constexpr int axis_right_y       = XBOX_CONTROLLER_AXIS_STICK_RIGHT_VERTICAL;
-    static constexpr int axis_right_x       = XBOX_CONTROLLER_AXIS_STICK_RIGHT_HORIZONTAL;
-
-    static constexpr int button_B           = XBOX_CONTROLLER_BUTTON_B;
-    static constexpr int button_A           = XBOX_CONTROLLER_BUTTON_A;
-    static constexpr int button_X           = XBOX_CONTROLLER_BUTTON_X;
-    static constexpr int button_Y           = XBOX_CONTROLLER_BUTTON_Y;
-    static constexpr int button_O           = XBOX_CONTROLLER_BUTTON_BACK;
-    static constexpr int button_L           = XBOX_CONTROLLER_BUTTON_LB;
-    static constexpr int button_R           = XBOX_CONTROLLER_BUTTON_RB;
-    static constexpr int button_ZL          = XBOX_CONTROLLER_BUTTON_LS;
-    static constexpr int button_ZR          = XBOX_CONTROLLER_BUTTON_RS;
-    static constexpr int button_MINUS       = XBOX_CONTROLLER_BUTTON_START;
-    static constexpr int button_PLUS        = XBOX_CONTROLLER_BUTTON_START;
-    static constexpr int button_H           = XBOX_CONTROLLER_BUTTON_START;
-    static constexpr int button_stick_L     = XBOX_CONTROLLER_BUTTON_LS;
-    static constexpr int button_stick_R     = XBOX_CONTROLLER_BUTTON_RS;
-
     double press_to_power_on_duration;
 };

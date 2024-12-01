@@ -2,7 +2,6 @@ bool power
 bool is_ready
 bool imu_status
 
-
 bool POWER_OFF = false
 bool POWER_ON = true
 

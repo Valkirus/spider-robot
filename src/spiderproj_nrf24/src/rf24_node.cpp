@@ -21,7 +21,7 @@ public:
 
         publisher_ = this->create_publisher<sensor_msgs::msg::Joy>("joy", 1); 
         timer_ = this->create_wall_timer(
-            std::chrono::milliseconds(50),
+            std::chrono::milliseconds(55),
             std::bind(&RF24Node::read_data, this));
     }
 
@@ -90,20 +90,14 @@ private:
                 received_data.toggle1 ? 0 : 1,
                 received_data.toggle2 ? 0 : 1,
                 received_data.toggle3 ? 0 : 1,
-                received_data.toggle4 ? 0 : 1
+                received_data.toggle4 ? 0 : 1,
+                1
             };
 
             joy_message.header.stamp = this->get_clock()->now();
             joy_message.header.frame_id = "rf24_joystick";
 
             publisher_->publish(joy_message);
-
-            //RCLCPP_INFO(this->get_logger(), 
-             //   "Published Joy message - Axes: [%f, %f, %f, %f], Buttons: [%d, %d, %d, %d]",
-             //   joy_message.axes[0], joy_message.axes[1],
-             //   joy_message.axes[2], joy_message.axes[3],
-             //   joy_message.buttons[0], joy_message.buttons[1],
-             //   joy_message.buttons[2], joy_message.buttons[3]);
         }
         else {
             // Optional: Add a less frequent "no data" log to prevent log spam
@@ -111,6 +105,25 @@ private:
             if (++no_data_count % 20 == 0) {
                 RCLCPP_WARN(this->get_logger(), "No RF24 data received for %d cycles", no_data_count);
             }
+            auto joy_message = sensor_msgs::msg::Joy();
+            joy_message.axes = {
+                0,
+                0,
+                0,
+                0
+            };
+
+            joy_message.buttons = {
+                0,
+                0,
+                0,
+                0,
+                0
+            };
+
+            joy_message.header.stamp = this->get_clock()->now();
+            joy_message.header.frame_id = "rf24_joystick";
+            publisher_->publish(joy_message);
         }
     }
 

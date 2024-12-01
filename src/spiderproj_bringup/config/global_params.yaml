@@ -70,6 +70,6 @@ global_parameter_server:
     workspace_ellipse_axes: [0.15, 0.15, 0.15]
 
     #workspace_ellipse_origin: [0.105, 0.0, -0.08]
-    workspace_ellipse_origin: [0.105, 0.0, -0.09]
+    workspace_ellipse_origin: [0.105, 0.0, -0.085]
     transfer_height: 0.053
     max_obstacle_height: 0.053

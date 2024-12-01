@@ -52,7 +52,7 @@ private:
 
     void sendHexapodMotionData(const sensor_msgs::msg::Joy::SharedPtr);
 
-    void setBodyPose(double, double, int);
+    void setBodyPose(double, double, int, bool);
     void setBodyTwist(double);
 
     void setStreamTwist(double, double);

@@ -112,7 +112,7 @@ void TeleopJoy::setStreamlined() {
     // sleep here ??
 }
 
-// set gait (wave, ripple, tripod)
+// set gait (wave, ripple, tripod) unused
 void TeleopJoy::setGaitWave() {
     hexapod_motion.gait= spiderproj_msgs::msg::HexapodMotion::WAVE_GAIT;
     hexapod_motion_pub_->publish(hexapod_motion);
@@ -130,25 +130,43 @@ void TeleopJoy::setGaitTripod() {
 
 // find hexapod motion data
 // find body control
-void TeleopJoy::setBodyPose(double s_xR, double s_yR, int R_button_state) {
-    // Handle button state
-    //Time or progress tracking for sine wave interpolation
-    static double progress = 0.0;  // Track progress over time
-    double amplitude = s_xR * max_body_y_euler;  // Adjust amplitude based on input
-    double frequency = 1.0;  // Controls how many full oscillations occur per progress cycle
+void TeleopJoy::setBodyPose(double s_xR, double s_yR, int R_button_state, bool is_dancing) {
+    //RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Sine interpolated value : %f", sine_interpolated_value);
+    if (is_dancing) {
+        static double progress = 0.0;
+        double frequency = 1.0;  //oscillations per cycle
 
-    // Calculate sine wave value
-    double sine_interpolated_value = amplitude * sin(2.0 * M_PI * frequency * progress);
+        double amplitude_y = s_xR * max_body_y_euler;
+        double max_amplitude_y = max_body_y_euler;
+        double phase_offset_y = (M_PI / 2); 
 
-    // Increment progress over time
-    progress += 0.05;  // Adjust speed of progression through the sine wave
-    if (progress >= 1.0) {
-        progress -= 1.0;  // Keep progress within [0, 1] for continuous looping
+        double amplitude_x = s_yR * max_body_z_euler;
+        double max_amplitude_x = max_body_z_euler;
+        double phase_offset_x = (M_PI / 2); 
+
+        // Calculate sine wave value Y-axis
+        double sine_interpolated_value_y = amplitude_y * sin(2.0 * M_PI * frequency * progress);
+        double sine_interpolated_value_y_delayed = amplitude_y * sin(2.0 * M_PI * frequency * progress + phase_offset_y);
+
+        //x-axis
+        double sine_interpolated_value_x = amplitude_x * sin(2.0 * M_PI * frequency * progress);
+        double sine_interpolated_value_x_delayed = amplitude_x * sin(2.0 * M_PI * frequency * progress + phase_offset_x);
+
+        progress += 0.04; 
+        if (progress >= 1.0) {
+            progress -= 1.0; 
     
-    }
-    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Sine interpolated value : %f", sine_interpolated_value);
+        }
 
-    if (R_button_state == 1.0) {
+        body_control.body_pose_euler_angles.euler_angles.z = 0.0;
+        body_control.body_pose_euler_angles.euler_angles.y = sine_interpolated_value_y_delayed * 1.5;
+        body_control.body_pose_euler_angles.euler_angles.x = sine_interpolated_value_x_delayed * 1.5;
+
+        body_control.body_pose_euler_angles.position.x = sine_interpolated_value_y * 0.2;
+        body_control.body_pose_euler_angles.position.y = sine_interpolated_value_x * 0.2;
+        body_control.body_pose_euler_angles.position.z = 0.0;
+    }
+    else if (R_button_state == 1.0) {
         body_control.body_pose_euler_angles.euler_angles.z = 0.0;
         body_control.body_pose_euler_angles.euler_angles.y = 0.0;
         body_control.body_pose_euler_angles.euler_angles.x = 0.0;
@@ -157,11 +175,11 @@ void TeleopJoy::setBodyPose(double s_xR, double s_yR, int R_button_state) {
         body_control.body_pose_euler_angles.position.y = s_yR * max_body_y;
         body_control.body_pose_euler_angles.position.z = 0.0;
     } else {
-        body_control.body_pose_euler_angles.euler_angles.z = -s_yR * max_body_z_euler;
-        body_control.body_pose_euler_angles.euler_angles.y = sine_interpolated_value;
+        body_control.body_pose_euler_angles.euler_angles.z = s_yR * max_body_z_euler;
+        body_control.body_pose_euler_angles.euler_angles.y = s_xR * max_body_y_euler;
         body_control.body_pose_euler_angles.euler_angles.x = 0.0;
 
-        body_control.body_pose_euler_angles.position.x = -sine_interpolated_value * 0.1;
+        body_control.body_pose_euler_angles.position.x = 0.0;
         body_control.body_pose_euler_angles.position.y = 0.0;
         body_control.body_pose_euler_angles.position.z = 0.0;
     }
@@ -202,7 +220,8 @@ void TeleopJoy::setOmniTwist(double s_xL, double s_yL) {
 void TeleopJoy::sendHexapodMotionData(const sensor_msgs::msg::Joy::SharedPtr joy) {
     setBodyPose(joy->axes[3],
                 joy->axes[2],
-                joy->buttons[2]);
+                joy->buttons[2],
+                is_dancing);
 
     //setBodyTwist(joy->axes[axis_cross_x]);
 

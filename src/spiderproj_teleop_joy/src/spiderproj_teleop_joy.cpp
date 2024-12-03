@@ -137,11 +137,9 @@ void TeleopJoy::setBodyPose(double s_xR, double s_yR, int R_button_state, bool i
         double frequency = 1.0;  //oscillations per cycle
 
         double amplitude_y = s_xR * max_body_y_euler;
-        double max_amplitude_y = max_body_y_euler;
         double phase_offset_y = (M_PI / 2); 
 
         double amplitude_x = s_yR * max_body_z_euler;
-        double max_amplitude_x = max_body_z_euler;
         double phase_offset_x = (M_PI / 2); 
 
         // Calculate sine wave value Y-axis
@@ -154,16 +152,15 @@ void TeleopJoy::setBodyPose(double s_xR, double s_yR, int R_button_state, bool i
 
         progress += 0.04; 
         if (progress >= 1.0) {
-            progress -= 1.0; 
-    
+            progress -= 1.0;
         }
 
         body_control.body_pose_euler_angles.euler_angles.z = 0.0;
-        body_control.body_pose_euler_angles.euler_angles.y = sine_interpolated_value_y_delayed * 1.5;
-        body_control.body_pose_euler_angles.euler_angles.x = sine_interpolated_value_x_delayed * 1.5;
+        body_control.body_pose_euler_angles.euler_angles.y = sine_interpolated_value_y_delayed;
+        body_control.body_pose_euler_angles.euler_angles.x = sine_interpolated_value_x_delayed;
 
-        body_control.body_pose_euler_angles.position.x = sine_interpolated_value_y * 0.2;
-        body_control.body_pose_euler_angles.position.y = sine_interpolated_value_x * 0.2;
+        body_control.body_pose_euler_angles.position.x = sine_interpolated_value_y * 0.14;
+        body_control.body_pose_euler_angles.position.y = -sine_interpolated_value_x * 0.14;
         body_control.body_pose_euler_angles.position.z = 0.0;
     }
     else if (R_button_state == 1.0) {

@@ -171,43 +171,90 @@ void Kinematics::timer_callback() {
     }
 }
 
+#include <vector>
+#include <numeric>
+
 void Kinematics::send_get_command(int serial_port, uint8_t startIdx, uint8_t count) {
-    unsigned char txbuff[4];
-    txbuff[0] = 0xC7;                      // Command for GET
-    txbuff[1] = startIdx;                  // Start index (e.g., SERVO18)
-    txbuff[2] = count;                     // Number of values to retrieve
-    txbuff[3] = '\n';                      // End of command
+    unsigned char txbuff[3];
+    txbuff[0] = 0xC7;       // Command byte
+    txbuff[1] = startIdx;   // Start index
+    txbuff[2] = count;      // Number of values to read
 
-    write(serial_port, txbuff, sizeof(txbuff));
-}
+    // Send the GET command
+    if (write(serial_port, txbuff, sizeof(txbuff)) < 0) {
+        RCLCPP_ERROR(rclcpp::get_logger("Kinematics"), "Failed to send GET command: %s", strerror(errno));
+        return;
+    }
 
-void Kinematics::get_response(int serial_port) {
-    unsigned char rxbuff[2];
-    int bytes_read = read(serial_port, rxbuff, sizeof(rxbuff));
+    // Prepare buffer to receive data
+    unsigned char rxbuff[2 * count];  // Adjust buffer size to handle multiple values
+    int bytes_read = 0;
+    int total_bytes_read = 0;
 
-    if (bytes_read > 0) {
-        uint16_t value = (rxbuff[0] & 0x7F) | ((rxbuff[1] & 0x7F) << 7);
-        RCLCPP_INFO(rclcpp::get_logger("Response"), "Value received : %f" , value);
-    } else {
-        RCLCPP_INFO(rclcpp::get_logger("Response"), "No response or time out!");
+    // Set a timeout duration (e.g., 1 second)
+    auto timeout = std::chrono::steady_clock::now() + std::chrono::seconds(1);
+
+    // Read the response, checking for timeout
+    while (total_bytes_read < 2 * count) {
+        bytes_read = read(serial_port, rxbuff + total_bytes_read, 2 * count - total_bytes_read);
+
+        if (bytes_read < 0) {
+            RCLCPP_ERROR(rclcpp::get_logger("Kinematics"), "Failed to read from serial port: %s", strerror(errno));
+            return;
+        }
+
+        total_bytes_read += bytes_read;
+
+        // Check if we've exceeded the timeout
+        if (std::chrono::steady_clock::now() > timeout) {
+            RCLCPP_ERROR(rclcpp::get_logger("Kinematics"), "Read timeout occurred");
+            return;
+        }
+    }
+
+    // Process each value received and average readings to reduce noise
+    for (uint8_t i = 0; i < count; i++) {
+        std::vector<uint16_t> values;
+        
+        // Collect multiple samples for averaging
+        for (int sample = 0; sample < 5; ++sample) {  // Adjust number of samples as needed
+            uint16_t value = (rxbuff[2 * i] & 0x7F) | ((rxbuff[2 * i + 1] & 0x7F) << 7);
+            values.push_back(value);
+        }
+
+        // Average the samples
+        uint16_t sum = std::accumulate(values.begin(), values.end(), 0);
+        uint16_t avg_value = sum / values.size();
+
+        // Calculate voltage from the averaged value
+        float voltage = (avg_value / 1023.0f) * 3.3f;
+
+        RCLCPP_INFO(rclcpp::get_logger("Kinematics"), "Average Voltage for index %d: %.2f V", startIdx + i, voltage);
     }
 }
 
+
 int Kinematics::setup_serial_port(const std::string& port_name) {
+    // Open the serial port
     int serial_port = open(port_name.c_str(), O_RDWR | O_NOCTTY | O_SYNC);
     if (serial_port == -1) {
-        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Failed!");
+        RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to open port %s: %s", port_name.c_str(), strerror(errno));
+        return -1; // Return -1 on failure
     }
 
     // Configure serial port settings
     struct termios tty;
     if (tcgetattr(serial_port, &tty) != 0) {
-        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Failed!");
+        RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to get attributes for %s: %s", port_name.c_str(), strerror(errno));
+        close(serial_port); // Close the port before returning
+        return -1;
     }
 
+    // Set baud rates
     cfsetospeed(&tty, B115200);
     cfsetispeed(&tty, B115200);
 
+    // Configure 8-bit chars, no parity, 1 stop bit
     tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8; // 8-bit chars
     tty.c_iflag &= ~IGNBRK;                     // Disable break processing
     tty.c_lflag = 0;                            // No signaling chars, no echo, no canonical processing
@@ -218,18 +265,21 @@ int Kinematics::setup_serial_port(const std::string& port_name) {
     tty.c_iflag &= ~(IXON | IXOFF | IXANY);     // Disable flow control
     tty.c_cflag |= (CLOCAL | CREAD);            // Enable receiver, set local mode
 
-    // Apply attributes
+    // Apply the configuration
     if (tcsetattr(serial_port, TCSANOW, &tty) != 0) {
-        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Failed!");
+        RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to set attributes for %s: %s", port_name.c_str(), strerror(errno));
+        close(serial_port); // Close the port before returning
+        return -1;
     }
 
-    return serial_port;
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Successfully configured serial port: %s", port_name.c_str());
+    return serial_port; // Return the file descriptor if successful
 }
 
 std::vector<std::vector<int>> pulses = {
         {460, 1460, 2460}, // L3C, 1
         {500, 1500, 2500}, // L3F, 2
-        {440, 1440, 2440}, // L3T, 3
+        {560, 1560, 2560}, // L3T, 3
         {500, 1500, 2500}, // L2C, 4
         {450, 1450, 2450}, // L2F, 5
         {600, 1600, 2600}, // L2T, 6
@@ -266,7 +316,7 @@ void Kinematics::toggleRelayOn(int serial_port) {
     unsigned char txbuff[6];
     uint16_t value = 1;
     txbuff[0] = 0xD3;                      // Command to set values
-    txbuff[1] = 26;                     // Start index (e.g., SERVO18)
+    txbuff[1] = RELAY;                     // Start index (e.g., SERVO18)
     txbuff[2] = 1;                        // Number of values to send
     txbuff[3] = value & 0x7F;                 // Lower 7 bits of value
     txbuff[4] = (value >> 7) & 0x7F;          // Upper 7 bits of value
@@ -279,7 +329,7 @@ void Kinematics::toggleRelayOff(int serial_port) {
     unsigned char txbuff[6];
     uint16_t value = 0;
     txbuff[0] = 0xD3;                      // Command to set values
-    txbuff[1] = 26;                     // Start index (e.g., SERVO18)
+    txbuff[1] = RELAY;                     // Start index (e.g., SERVO18)
     txbuff[2] = 1;                        // Number of values to send
     txbuff[3] = value & 0x7F;                 // Lower 7 bits of value
     txbuff[4] = (value >> 7) & 0x7F;          // Upper 7 bits of value
@@ -288,26 +338,27 @@ void Kinematics::toggleRelayOff(int serial_port) {
     write(serial_port, txbuff, sizeof(txbuff));
 }
 
-void Kinematics::send_command(int serial_port, uint8_t startIdx, uint8_t count, uint16_t value, uint16_t value2, uint16_t value3) {
-    unsigned char txbuff[10];
-    txbuff[0] = 0xD3;                      // Command to set values
-    txbuff[1] = startIdx;                     // Start index (e.g., SERVO18)
-    txbuff[2] = count;                        // Number of values to send
-    txbuff[3] = value & 0x7F;                 // Lower 7 bits of value
-    txbuff[4] = (value >> 7) & 0x7F;          // Upper 7 bits of value
-    txbuff[5] = value2 & 0x7F;                 // Lower 7 bits of value
-    txbuff[6] = (value2 >> 7) & 0x7F;          // Upper 7 bits of value
-    txbuff[7] = value3 & 0x7F;                 // Lower 7 bits of value
-    txbuff[8] = (value3 >> 7) & 0x7F;          // Upper 7 bits of value
-    txbuff[9] = '\n';      
+void Kinematics::send_command(int serial_port, uint8_t startIdx, uint8_t count, uint16_t* values) {
+    std::vector<uint8_t> txbuff;
+    txbuff.reserve(3 + count * 2 + 1);
 
-    write(serial_port, txbuff, sizeof(txbuff));
+    txbuff.push_back(0xD3); 
+    txbuff.push_back(startIdx); 
+    txbuff.push_back(count);     
+
+    for (uint8_t i = 0; i < count; i++) {
+        txbuff.push_back(values[i] & 0x7F);          // Lower 7 bits
+        txbuff.push_back((values[i] >> 7) & 0x7F);   // Upper 7 bits
+    }
+
+    ssize_t bytes_written = write(serial_port, txbuff.data(), txbuff.size());
+    if (bytes_written < 0) {
+        RCLCPP_ERROR(this->get_logger(), "Failed to write to serial port");
+    }
 }
 
 void Kinematics::publish_joint_states() {
     if (params_set_flag) {
-        //send_get_command(serial_port_fd_, 25, 1);
-        //get_response(serial_port_fd_);
         //R1
         double coxa_angle_degR1 = (legs[5].getCoxaAngle() * (180.0 / M_PI) );
         double femur_angle_degR1 = (legs[5].getFemurAngle() * (180.0 / M_PI)) - 35;
@@ -337,16 +388,29 @@ void Kinematics::publish_joint_states() {
         double coxa_angle_degL3 = (legs[2].getCoxaAngle() * (180.0 / M_PI));
         double femur_angle_degL3 = -(legs[2].getFemurAngle() * (180.0 / M_PI) - 35) ;
         double tibia_angle_degL3 = (legs[2].getTibiaAngle() * (180.0 / M_PI) + 90);
-        
-        send_command(serial_port_fd_, 3, 3, convert_angle_to_value(9, coxa_angle_degR3), convert_angle_to_value(10, femur_angle_degR3), convert_angle_to_value(11, tibia_angle_degR3));
-        send_command(serial_port_fd_, 9, 3, convert_angle_to_value(12,coxa_angle_degR2), convert_angle_to_value(13,femur_angle_degR2), convert_angle_to_value(14, tibia_angle_degR2));
-        send_command(serial_port_fd_, 15, 3, convert_angle_to_value(15,coxa_angle_degR1), convert_angle_to_value(16,femur_angle_degR1), convert_angle_to_value(17,tibia_angle_degR1));
 
-        //L
-        send_command(serial_port_fd_, 12, 3, convert_angle_to_value(6, coxa_angle_degL1), convert_angle_to_value(7,femur_angle_degL1), convert_angle_to_value(7,tibia_angle_degL1));
-        send_command(serial_port_fd_, 6, 3, convert_angle_to_value(3,coxa_angle_degL2), convert_angle_to_value(4,femur_angle_degL2), convert_angle_to_value(5,tibia_angle_degL2));
-        send_command(serial_port_fd_, 0, 3, convert_angle_to_value(0,coxa_angle_degL3), convert_angle_to_value(1,femur_angle_degL3), convert_angle_to_value(2,tibia_angle_degL3));
-        //RCLCPP_INFO(rclcpp::get_logger("debug"), "R3 tibia: %f, L3 tibia: %f" , tibia_angle_degR3, tibia_angle_degL3);
+        uint16_t values[18] = {
+            convert_angle_to_value(0, coxa_angle_degL3),
+            convert_angle_to_value(1, femur_angle_degL3),
+            convert_angle_to_value(2, tibia_angle_degL3),
+            convert_angle_to_value(9, coxa_angle_degR3),
+            convert_angle_to_value(10, femur_angle_degR3),
+            convert_angle_to_value(11, tibia_angle_degR3),
+            convert_angle_to_value(3, coxa_angle_degL2),
+            convert_angle_to_value(4, femur_angle_degL2),
+            convert_angle_to_value(5, tibia_angle_degL2),
+            convert_angle_to_value(12, coxa_angle_degR2),
+            convert_angle_to_value(13, femur_angle_degR2),
+            convert_angle_to_value(14, tibia_angle_degR2),
+            convert_angle_to_value(6, coxa_angle_degL1),
+            convert_angle_to_value(7, femur_angle_degL1),
+            convert_angle_to_value(8, tibia_angle_degL1),
+            convert_angle_to_value(15, coxa_angle_degR1),
+            convert_angle_to_value(16, femur_angle_degR1),
+            convert_angle_to_value(17, tibia_angle_degR1)
+        };
+        
+        send_command(serial_port_fd_, 0, 18, values);
 
         for (Leg& leg : legs) {
             leg.resetDuration();
@@ -357,6 +421,7 @@ void Kinematics::publish_joint_states() {
 // Gait
 void Kinematics::sit_down() {
     double dt = DEFAULT_TIMESTEP;
+    send_get_command(serial_port_fd_, VOLT, 1);
 
     std::vector<KDL::Path_RoundedComposite*> paths;
     for (int i = 0; i < num_legs; i++) {

@@ -24,7 +24,7 @@
 #include <termios.h>
 
 #define DEFAULT_TIMESTEP 0.02
-#define TRAJ_RES 50
+#define TRAJ_RES 60
 #define MAX_SWING_VEL 1
 
 class Kinematics : public rclcpp::Node {
@@ -32,6 +32,14 @@ public:
     Kinematics();
 
 private:
+    typedef enum {
+    SERVO1, SERVO2, SERVO3, SERVO4, SERVO5, SERVO6, 
+    SERVO7, SERVO8, SERVO9, SERVO10, SERVO11, SERVO12, 
+    SERVO13, SERVO14, SERVO15, SERVO16, SERVO17, SERVO18,
+    TS1, TS2, TS3, TS4, TS5, TS6, 
+    CURR, VOLT, RELAY, A1, A2, cmdPin_num
+    } cmdPins;
+    
     std::shared_ptr<rclcpp::AsyncParametersClient> parameters_client_;
     void set_params_from_global_param_server(std::shared_future<std::vector<rclcpp::Parameter>>);
 
@@ -57,7 +65,7 @@ private:
     uint16_t convert_angle_to_value(int servoNum ,double angle);
     void toggleRelayOn(int serial_port);
     void toggleRelayOff(int serial_port);
-    void send_command(int serial_port, uint8_t startIdx, uint8_t count, uint16_t value, uint16_t value2, uint16_t value3);
+    void send_command(int serial_port, uint8_t startIdx, uint8_t count, uint16_t* values);
     void send_get_command(int serial_port, uint8_t startIdx, uint8_t count);
 
     void publish_joint_states();

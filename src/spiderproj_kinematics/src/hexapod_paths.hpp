@@ -158,8 +158,9 @@ namespace KDL {
                       double _height, 
                       double _duration)
         : start_pose(_start_pose), end_pos(_end_pos), height(_height), duration(_duration) {
-            rolling_axis = end_pos - start_pose.p;
+            rolling_axis = (end_pos - start_pose.p);
             length = rolling_axis.Normalize();
+            //RCLCPP_INFO(rclcpp::get_logger("length"), "length: %f", length);
             height = _height;
             duration = _duration;
 

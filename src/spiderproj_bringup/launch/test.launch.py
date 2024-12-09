@@ -47,11 +47,7 @@ def generate_launch_description():
     # RViz
     # UNCOMMENT TO LAUNCH RVIZ ON BRINGUP
     '''
-    joint_state_publisher_node = Node(
-        package="joint_state_publisher",
-        executable="joint_state_publisher",
-        parameters=[{'source_list': ['/kinematics/joint_states']}]
-    )
+    
 
     rviz2_node = Node(
         package="rviz2",
@@ -71,6 +67,6 @@ def generate_launch_description():
 
     return LaunchDescription([
         global_param_node,
-        kinematics_node,
-        teleop_launch_file
+        teleop_launch_file,
+        kinematics_node
     ])

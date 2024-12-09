@@ -45,6 +45,8 @@ Kinematics::Kinematics()
     body_control_sub_   = this->create_subscription<spiderproj_msgs::msg::BodyControl>
         ("/teleop/body_control", 1, std::bind(&Kinematics::body_control_callback, this, std::placeholders::_1));
 
+    joint_states_pub_   = this->create_publisher<sensor_msgs::msg::JointState>("/kinematics/joint_states", 1);
+
     timer_ = this->create_wall_timer(
         std::chrono::milliseconds(10), std::bind(&Kinematics::timer_callback, this));
 }
@@ -90,6 +92,13 @@ void Kinematics::set_params_from_global_param_server(std::shared_future<std::vec
                         coxa_length, femur_length, tibia_length, 
                         T_origin, 
                         sitting_position));
+        
+        joint_states_msg.name.push_back("coxa_joint_" + leg_suffixes[i]);
+        joint_states_msg.name.push_back("femur_joint_" + leg_suffixes[i]);
+        joint_states_msg.name.push_back("tibia_joint_" + leg_suffixes[i]);
+        joint_states_msg.position.push_back(0.0);
+        joint_states_msg.position.push_back(0.0);
+        joint_states_msg.position.push_back(0.0);
         
     }
 
@@ -214,22 +223,22 @@ int Kinematics::setup_serial_port(const std::string& port_name) {
 }
 
 std::vector<std::vector<int>> pulses = {
-        {460, 1460, 2460}, // L3C, 1
-        {500, 1500, 2500}, // L3F, 2
-        {560, 1560, 2560}, // L3T, 3
-        {500, 1500, 2500}, // L2C, 4
-        {450, 1450, 2450}, // L2F, 5
-        {600, 1600, 2600}, // L2T, 6
-        {400, 1400, 2400}, // L1C, 7
-        {500, 1500, 2500}, // L1F, 8
+        {490, 1490, 2490}, // L3C, 1
+        {400, 1400, 2400}, // L3F, 2
+        {460, 1460, 2460}, // L3T, 3
+        {520, 1520, 2520}, // L2C, 4
+        {500, 1500, 2500}, // L2F, 5
+        {570, 1570, 2570}, // L2T, 6
+        {430, 1430, 2430}, // L1C, 7
+        {490, 1490, 2490}, // L1F, 8
         {440, 1440, 2440}, // L1T, 9
-        {580, 1580, 2580}, // R3C, 10
+        {560, 1560, 2560}, // R3C, 10
         {460, 1460, 2460}, // R3F, 11
-        {545, 1545, 2545}, // R3T, 12
-        {520, 1520, 2520}, // R2C, 13
+        {560, 1560, 2560}, // R3T, 12
+        {460, 1460, 2460}, // R2C, 13
         {460, 1460, 2460}, // R2F, 14
         {400, 1400, 2400}, // R2T, 15
-        {440, 1440, 2440}, // R1C, 16
+        {430, 1430, 2430}, // R1C, 16
         {520, 1520, 2520}, // R1F, 17
         {540, 1540, 2540}  // R1T, 18
 };
@@ -477,6 +486,7 @@ void Kinematics::publish_joint_states() {
             convert_angle_to_value(17, tibia_angle_degR1)
         };
         //checkFeetSensors(serial_port_fd_, TS1, 6);
+        
         send_command(serial_port_fd_, 0, 18, values);
 
         for (Leg& leg : legs) {

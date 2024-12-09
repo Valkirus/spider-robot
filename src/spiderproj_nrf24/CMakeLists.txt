@@ -9,6 +9,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(spiderproj_msgs REQUIRED)
 
 
 include_directories(/usr/local/include)
@@ -16,7 +17,7 @@ link_directories(/usr/local/lib)
 
 add_executable(rf24_node src/rf24_node.cpp)
 target_link_libraries(rf24_node rf24)
-ament_target_dependencies(rf24_node rclcpp sensor_msgs)
+ament_target_dependencies(rf24_node rclcpp sensor_msgs spiderproj_msgs)
 
 install(TARGETS
   rf24_node

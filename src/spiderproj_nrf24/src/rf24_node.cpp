@@ -1,5 +1,5 @@
 #include <rclcpp/rclcpp.hpp>
-#include "sensor_msgs/msg/joy.hpp"
+#include <spiderproj_msgs/msg/joy_data.hpp>
 #include <RF24/RF24.h>
 
 class RF24Node : public rclcpp::Node {
@@ -19,7 +19,7 @@ public:
             throw;
         }
 
-        publisher_ = this->create_publisher<sensor_msgs::msg::Joy>("joy", 1); 
+        publisher_ = this->create_publisher<spiderproj_msgs::msg::JoyData>("joy", 1); 
         timer_ = this->create_wall_timer(
             std::chrono::milliseconds(55),
             std::bind(&RF24Node::read_data, this));
@@ -77,7 +77,7 @@ private:
             }
 
             radio.read(&received_data, sizeof(RC_Data_Package));
-            auto joy_message = sensor_msgs::msg::Joy();
+            auto joy_message = spiderproj_msgs::msg::JoyData();
 
             joy_message.axes = {
                 apply_deadzone(static_cast<float>(received_data.joy1_X) / 255.0f * 2.0f - 1.0f, 0.2f),
@@ -94,9 +94,6 @@ private:
                 1
             };
 
-            joy_message.header.stamp = this->get_clock()->now();
-            joy_message.header.frame_id = "rf24_joystick";
-
             publisher_->publish(joy_message);
         }
         else {
@@ -105,7 +102,7 @@ private:
             if (++no_data_count % 20 == 0) {
                 RCLCPP_WARN(this->get_logger(), "No RF24 data received for %d cycles", no_data_count);
             }
-            auto joy_message = sensor_msgs::msg::Joy();
+            auto joy_message = spiderproj_msgs::msg::JoyData();
             joy_message.axes = {
                 0,
                 0,
@@ -121,15 +118,13 @@ private:
                 0
             };
 
-            joy_message.header.stamp = this->get_clock()->now();
-            joy_message.header.frame_id = "rf24_joystick";
             publisher_->publish(joy_message);
         }
     }
 
     uint8_t address[2][6] = {"1Node", "2Node"};
     RF24 radio;
-    rclcpp::Publisher<sensor_msgs::msg::Joy>::SharedPtr publisher_;
+    rclcpp::Publisher<spiderproj_msgs::msg::JoyData>::SharedPtr publisher_;
     rclcpp::TimerBase::SharedPtr timer_;
 };
 

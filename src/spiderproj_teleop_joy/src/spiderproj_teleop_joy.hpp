@@ -6,6 +6,7 @@
 #include <spiderproj_msgs/msg/body_control.hpp>
 #include <spiderproj_msgs/msg/hexapod_motion.hpp>
 #include <spiderproj_msgs/msg/meta_commands.hpp>
+#include <spiderproj_msgs/msg/joy_data.hpp>
 
 #include <Eigen/Geometry>
 #include <cmath>
@@ -25,7 +26,7 @@ private:
     rclcpp::Publisher<spiderproj_msgs::msg::HexapodMotion>::SharedPtr hexapod_motion_pub_;
     rclcpp::Publisher<spiderproj_msgs::msg::MetaCommands>::SharedPtr  meta_cmd_pub_;
 
-    rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
+    rclcpp::Subscription<spiderproj_msgs::msg::JoyData>::SharedPtr joy_sub_;
 
     spiderproj_msgs::msg::BodyControl   body_control;
     spiderproj_msgs::msg::HexapodMotion hexapod_motion;
@@ -36,7 +37,7 @@ private:
     bool imu_flag;
     bool is_dancing;
 
-    void joyCallback(const sensor_msgs::msg::Joy::SharedPtr);
+    void joyCallback(const spiderproj_msgs::msg::JoyData::SharedPtr);
 
     // control methods
     void servoPowerOn();
@@ -50,7 +51,7 @@ private:
     void setGaitRipple();
     void setGaitTripod();
 
-    void sendHexapodMotionData(const sensor_msgs::msg::Joy::SharedPtr);
+    void sendHexapodMotionData(const spiderproj_msgs::msg::JoyData::SharedPtr);
 
     void setBodyPose(double, double, int, bool);
     void setBodyTwist(double);
@@ -69,7 +70,7 @@ private:
     bool tripod_gait_command_flag;
 
     // set joy control flags
-    void setJoyFlags(const sensor_msgs::msg::Joy::SharedPtr&);
+    void setJoyFlags(const spiderproj_msgs::msg::JoyData::SharedPtr&);
 
     std::chrono::time_point<std::chrono::steady_clock> startTime;
 

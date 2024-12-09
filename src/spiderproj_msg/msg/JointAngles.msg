@@ -1,1 +1,1 @@
-float64[] joint_angles
+uint16[18] joint_angles

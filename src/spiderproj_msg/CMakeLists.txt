@@ -27,8 +27,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/FeetContacts.msg"
   "msg/JointAngles.msg"
 
-  "msg/Relay.msg"
-  "msg/Servo2040Data.msg"
   DEPENDENCIES geometry_msgs std_msgs
 )
 

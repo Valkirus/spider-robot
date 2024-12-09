@@ -50,6 +50,8 @@ private:
     float coxa_length, femur_length, tibia_length;
     std::vector<Leg> legs;
 
+    rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr      joint_states_pub_;
+    sensor_msgs::msg::JointState joint_states_msg;
 
     rclcpp::Subscription<spiderproj_msgs::msg::BodyControl>::SharedPtr      body_control_sub_;
     rclcpp::Subscription<spiderproj_msgs::msg::HexapodMotion>::SharedPtr    hexapod_motion_sub_;
@@ -60,7 +62,6 @@ private:
     void body_control_callback(const spiderproj_msgs::msg::BodyControl::SharedPtr);
     void timer_callback();
 
-    void get_response(int serial_port);
     int setup_serial_port(const std::string& port_name);
     uint16_t convert_angle_to_value(int servoNum ,double angle);
     void toggleRelayOn(int serial_port);

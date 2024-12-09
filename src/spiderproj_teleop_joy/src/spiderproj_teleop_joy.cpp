@@ -26,7 +26,7 @@ TeleopJoy::TeleopJoy()
 
     startTime = std::chrono::steady_clock::now();
 
-    joy_sub_ = create_subscription<sensor_msgs::msg::Joy>(
+    joy_sub_ = create_subscription<spiderproj_msgs::msg::JoyData>(
         "/joy", 1, std::bind(&TeleopJoy::joyCallback, this, std::placeholders::_1));
 
     body_control_pub_   = create_publisher<spiderproj_msgs::msg::BodyControl>("/teleop/body_control", 1);           // body pose
@@ -45,7 +45,7 @@ void TeleopJoy::set_params_from_global_param_server(std::shared_future<std::vect
 }
 
 // sets control flags depending on joy input
-void TeleopJoy::setJoyFlags(const sensor_msgs::msg::Joy::SharedPtr &joy){
+void TeleopJoy::setJoyFlags(const spiderproj_msgs::msg::JoyData::SharedPtr &joy){
     servo_power_flag             = joy->buttons[4];
     start_command_flag           = joy->buttons[0]; // press
     omnidirectional_command_flag = joy->buttons[1]; // hold
@@ -214,7 +214,7 @@ void TeleopJoy::setOmniTwist(double s_xL, double s_yL) {
     hexapod_motion.motion_twist.linear.z  = 0.0;
 }
 
-void TeleopJoy::sendHexapodMotionData(const sensor_msgs::msg::Joy::SharedPtr joy) {
+void TeleopJoy::sendHexapodMotionData(const spiderproj_msgs::msg::JoyData::SharedPtr joy) {
     setBodyPose(joy->axes[3],
                 joy->axes[2],
                 joy->buttons[2],
@@ -230,7 +230,7 @@ void TeleopJoy::sendHexapodMotionData(const sensor_msgs::msg::Joy::SharedPtr joy
 }
 
 // CALLBACK
-void TeleopJoy::joyCallback(const sensor_msgs::msg::Joy::SharedPtr joy) {
+void TeleopJoy::joyCallback(const spiderproj_msgs::msg::JoyData::SharedPtr joy) {
     setJoyFlags(joy);
     //RCLCPP_INFO(this->get_logger(), "Received joyX: %f", joy->axes[0]);
 

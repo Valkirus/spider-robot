@@ -214,8 +214,8 @@
     <visual>
       <origin xyz="0 0 0.007" rpy="0 0 ${pi/2}" />
       <geometry>
-        <mesh filename="file://$(find spiderproj_description)/meshes/visual/Body6.stl"
-          scale="1 1 1" />
+        <mesh filename="file://$(find spiderproj_description)/meshes/Body6.stl" scale="1 1 1" />
+
       </geometry>
       <material name="white_pla" />
     </visual>
@@ -269,7 +269,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="${pi} 0 ${pi}" />
         <geometry>
-          <mesh filename="file://$(find spiderproj_description)/meshes/visual/Coxa_${side}.stl"
+          <mesh filename="file://$(find spiderproj_description)/meshes/Coxa_${side}.stl"
             scale="1 1 1" />
         </geometry>
         <material name="grey_pla" />
@@ -314,7 +314,7 @@
       <visual>
         <origin xyz="0 0 -0.0018" rpy="-${pi/2} 0 0" />
         <geometry>
-          <mesh filename="file://$(find spiderproj_description)/meshes/visual/Femur_${side}.stl"
+          <mesh filename="file://$(find spiderproj_description)/meshes/Femur_${side}.stl"
             scale="1 1 1" />
         </geometry>
         <material name="white_pla" />
@@ -367,7 +367,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="-${pi/2} 0 ${pi/2}" />
         <geometry>
-          <mesh filename="file://$(find spiderproj_description)/meshes/visual/Tibia_${side}.stl"
+          <mesh filename="file://$(find spiderproj_description)/meshes/Tibia_${side}.stl"
             scale="1 1 1" />
         </geometry>
         <material name="red_pla" />

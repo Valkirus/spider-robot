@@ -27,7 +27,21 @@ def generate_launch_description():
         name='global_parameter_server',
         parameters=[global_parameters, {'robot_description': robot_description}]
     )
-    
+
+    # Robot State Publisher
+    robot_state_publisher_node = Node(
+        package="robot_state_publisher",
+        executable="robot_state_publisher",
+        parameters=[{'robot_description': robot_description}]
+    )
+
+    # Joint State Publisher
+    joint_state_publisher_node = Node(
+        package="joint_state_publisher",
+        executable="joint_state_publisher",
+        parameters=[{'source_list': ['/kinematics/joint_states']}]
+    )
+
     # Teleop Launch File
     teleop_launch_file = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
@@ -48,6 +62,8 @@ def generate_launch_description():
     # Final Launch Description
     return LaunchDescription([
         global_param_node,
+        robot_state_publisher_node,
+        joint_state_publisher_node,
         kinematics_node,
         teleop_launch_file,
     ])

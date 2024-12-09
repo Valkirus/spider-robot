@@ -486,6 +486,16 @@ void Kinematics::publish_joint_states() {
             convert_angle_to_value(17, tibia_angle_degR1)
         };
         //checkFeetSensors(serial_port_fd_, TS1, 6);
+
+        for (int i = 0; i < num_legs; i++) {
+            joint_states_msg.header.stamp.sec = this->now().seconds();
+            joint_states_msg.header.stamp.nanosec = this->now().nanoseconds();
+            joint_states_msg.position[3*i]   = legs[i].getCoxaAngle();
+            joint_states_msg.position[3*i+1] = legs[i].getFemurAngle();
+            joint_states_msg.position[3*i+2] = legs[i].getTibiaAngle();
+        } 
+        joint_states_pub_->publish(joint_states_msg);
+
         
         send_command(serial_port_fd_, 0, 18, values);
 

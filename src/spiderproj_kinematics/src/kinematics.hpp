@@ -66,9 +66,9 @@ private:
     void toggleRelayOn(int serial_port);
     void toggleRelayOff(int serial_port);
     void send_command(int serial_port, uint8_t startIdx, uint8_t count, uint16_t* values);
-    void send_get_command(int serial_port, uint8_t startIdx, uint8_t count);
 
     void publish_joint_states();
+    void checkFeetSensors(int serial_port, uint8_t startIdx, uint8_t count);
 
     bool is_power_on;
     bool is_ready;
@@ -103,6 +103,7 @@ private:
     void move_wave();
     void move_ripple();
     void move_tripod();
+    void move_triple_gait();
 
     void move_body();
 

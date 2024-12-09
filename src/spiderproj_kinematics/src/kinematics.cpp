@@ -171,69 +171,6 @@ void Kinematics::timer_callback() {
     }
 }
 
-#include <vector>
-#include <numeric>
-
-void Kinematics::send_get_command(int serial_port, uint8_t startIdx, uint8_t count) {
-    unsigned char txbuff[3];
-    txbuff[0] = 0xC7;       // Command byte
-    txbuff[1] = startIdx;   // Start index
-    txbuff[2] = count;      // Number of values to read
-
-    // Send the GET command
-    if (write(serial_port, txbuff, sizeof(txbuff)) < 0) {
-        RCLCPP_ERROR(rclcpp::get_logger("Kinematics"), "Failed to send GET command: %s", strerror(errno));
-        return;
-    }
-
-    // Prepare buffer to receive data
-    unsigned char rxbuff[2 * count];  // Adjust buffer size to handle multiple values
-    int bytes_read = 0;
-    int total_bytes_read = 0;
-
-    // Set a timeout duration (e.g., 1 second)
-    auto timeout = std::chrono::steady_clock::now() + std::chrono::seconds(1);
-
-    // Read the response, checking for timeout
-    while (total_bytes_read < 2 * count) {
-        bytes_read = read(serial_port, rxbuff + total_bytes_read, 2 * count - total_bytes_read);
-
-        if (bytes_read < 0) {
-            RCLCPP_ERROR(rclcpp::get_logger("Kinematics"), "Failed to read from serial port: %s", strerror(errno));
-            return;
-        }
-
-        total_bytes_read += bytes_read;
-
-        // Check if we've exceeded the timeout
-        if (std::chrono::steady_clock::now() > timeout) {
-            RCLCPP_ERROR(rclcpp::get_logger("Kinematics"), "Read timeout occurred");
-            return;
-        }
-    }
-
-    // Process each value received and average readings to reduce noise
-    for (uint8_t i = 0; i < count; i++) {
-        std::vector<uint16_t> values;
-        
-        // Collect multiple samples for averaging
-        for (int sample = 0; sample < 5; ++sample) {  // Adjust number of samples as needed
-            uint16_t value = (rxbuff[2 * i] & 0x7F) | ((rxbuff[2 * i + 1] & 0x7F) << 7);
-            values.push_back(value);
-        }
-
-        // Average the samples
-        uint16_t sum = std::accumulate(values.begin(), values.end(), 0);
-        uint16_t avg_value = sum / values.size();
-
-        // Calculate voltage from the averaged value
-        float voltage = (avg_value / 1023.0f) * 3.3f;
-
-        RCLCPP_INFO(rclcpp::get_logger("Kinematics"), "Average Voltage for index %d: %.2f V", startIdx + i, voltage);
-    }
-}
-
-
 int Kinematics::setup_serial_port(const std::string& port_name) {
     // Open the serial port
     int serial_port = open(port_name.c_str(), O_RDWR | O_NOCTTY | O_SYNC);
@@ -357,6 +294,136 @@ void Kinematics::send_command(int serial_port, uint8_t startIdx, uint8_t count, 
     }
 }
 
+void Kinematics::checkFeetSensors(int serial_port, uint8_t startIdx, uint8_t count) {
+    if (params_set_flag) {
+        unsigned char txbuff[3];
+        txbuff[0] = 0xC7;       // Command byte
+        txbuff[1] = startIdx;   // Start index
+        txbuff[2] = count;      // Number of values to read
+
+        // Send the GET command
+        if (write(serial_port, txbuff, sizeof(txbuff)) < 0) {
+            RCLCPP_ERROR(rclcpp::get_logger("Kinematics"), "Failed to send GET command: %s", strerror(errno));
+            return;
+        }
+
+        // Prepare for response handling
+        bool ok = true;
+        int state = -1;
+        int idx = startIdx;
+        int count_remaining = count;
+        unsigned char c;
+        uint16_t value;
+        unsigned char rxbuff[256]; // Buffer to collect entire packet (ensure it’s large enough)
+        unsigned char *p = rxbuff;
+
+        while (ok) {
+            int res = read(serial_port, &c, 1);
+            if (res == -1) {
+                RCLCPP_ERROR(rclcpp::get_logger("Kinematics"), "Read from serial failed: %s", strerror(errno));
+                return;
+            } else if (res == 1) {
+                if (state == -1 && ((c & 0x80) == 0)) {
+                    RCLCPP_WARN(rclcpp::get_logger("Kinematics"), "Unexpected byte 0x%02X outside of a command packet", c);
+                } else {
+                    if ((c & 0x80) != 0) {  // Command byte detected
+                        state = 0;
+                        count_remaining = count;
+                        idx = startIdx;
+                        p = rxbuff;
+                        *p++ = c;
+                    } else {
+                        switch (state) {
+                            case 0: // Start index
+                                if (c > 26) {
+                                    RCLCPP_ERROR(rclcpp::get_logger("Kinematics"), "Index out of range: %d", c);
+                                    return;
+                                }
+                                idx = c;
+                                state++;
+                                break;
+                            case 1: // Count of values to read
+                                count_remaining = c;
+                                state++;
+                                break;
+                            case 2: // First byte of 16-bit value
+                                value = c & 0x7F;
+                                state++;
+                                break;
+                            case 3: // Second byte of 16-bit value
+                                value |= (c & 0x7F) << 7;
+                                if (idx == TS1) { // Assuming 24 is the index for current
+                                    float TS1 = ((float)value/1000); // Example scalingstrerror(errno)
+                                    if (TS1 > 500) {
+                                        legs[2].deactivate();
+                                    }
+                                    else {
+                                        legs[2].deactivate();
+                                    }
+                                }
+                                if (idx == TS2) { // Assuming 24 is the index for current
+                                    float TS2 = ((float)value/1000); // Example scalingstrerror(errno)
+                                    if (TS2 > 500) {
+                                        legs[1].deactivate();
+                                    }
+                                    else {
+                                        legs[1].deactivate();
+                                    }
+                                }
+                                if (idx == TS3) { // Assuming 24 is the index for current
+                                    float TS3 = ((float)value/1000); // Example scalingstrerror(errno)
+                                    if (TS3 > 500) {
+                                        legs[0].deactivate();
+                                    }
+                                    else {
+                                        legs[0].deactivate();
+                                    }
+                                }
+                                if (idx == TS4) { // Assuming 24 is the index for current
+                                    float TS4 = ((float)value/1000); // Example scalingstrerror(errno)
+                                    if (TS4 > 500) {
+                                        legs[3].deactivate();
+                                    }
+                                    else {
+                                        legs[3].deactivate();
+                                    }
+                                }
+                                if (idx == TS5) { // Assuming 24 is the index for current
+                                    float TS5 = ((float)value/1000); // Example scalingstrerror(errno)
+                                    if (TS5 > 500) {
+                                        legs[4].deactivate();
+                                    }
+                                    else {
+                                        legs[4].deactivate();
+                                    }
+                                }
+                                if (idx == TS6) { // Assuming 24 is the index for current
+                                    float TS6 = ((float)value/1000); // Example scalingstrerror(errno)
+                                    if (TS6 > 500) {
+                                        legs[5].deactivate();
+                                    }
+                                    else {
+                                        legs[5].deactivate();
+                                    }
+                                }
+                                idx++;
+                                count_remaining--;
+
+                                if (count_remaining == 0) {
+                                    ok = false; // Exit loop after last value
+                                } else {
+                                    state = 2; // Continue reading the next 16-bit value
+                                }
+                                break;
+                        }
+                        *p++ = c; // Store the byte in the buffer
+                    }
+                }
+            }
+        }
+    }
+}
+
 void Kinematics::publish_joint_states() {
     if (params_set_flag) {
         //R1
@@ -409,7 +476,7 @@ void Kinematics::publish_joint_states() {
             convert_angle_to_value(16, femur_angle_degR1),
             convert_angle_to_value(17, tibia_angle_degR1)
         };
-        
+        //checkFeetSensors(serial_port_fd_, TS1, 6);
         send_command(serial_port_fd_, 0, 18, values);
 
         for (Leg& leg : legs) {
@@ -421,7 +488,6 @@ void Kinematics::publish_joint_states() {
 // Gait
 void Kinematics::sit_down() {
     double dt = DEFAULT_TIMESTEP;
-    send_get_command(serial_port_fd_, VOLT, 1);
 
     std::vector<KDL::Path_RoundedComposite*> paths;
     for (int i = 0; i < num_legs; i++) {
@@ -579,6 +645,7 @@ void Kinematics::move_tripod() {
 
     is_in_null_pos = false;
 }
+
 void Kinematics::move_body() {
 
     for (auto& leg : legs) {

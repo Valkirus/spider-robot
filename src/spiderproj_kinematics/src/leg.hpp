@@ -131,6 +131,7 @@ public:
     KDL::Trajectory* traj;
     
     static int tripodPhase;
+    static int tripleGaitPhase;
     static int wavePhase;
     static int ripplePhase;
 
@@ -183,15 +184,18 @@ double Leg::path_angle = 0.0;
 KDL::Twist Leg::motion_twist = KDL::Twist::Zero();
 KDL::Frame Leg::body_pose = KDL::Frame::Identity();
 int Leg::tripodPhase = 0;
+int Leg::tripleGaitPhase = 0;
 int Leg::wavePhase = 0;
 int Leg::ripplePhase = 0;
 
 bool Leg::isInTaskspaceL(KDL::Vector p_l) {
     KDL::Vector vec = p_l - workspace.getCenterL();
-    return (std::pow(vec.x(), 2) / std::pow(workspace.a()/2, 2) + 
-            std::pow(vec.y(), 2) / std::pow(workspace.b()/2, 2) + 
-            std::pow(vec.z(), 2) / std::pow(workspace.c()/2, 2)) <= 1;
+    double workspace_expansion_factor = 1.2; // Increase workspace by 20%
+    return (std::pow(vec.x(), 2) / std::pow(workspace.a()/2 * workspace_expansion_factor, 2) + 
+            std::pow(vec.y(), 2) / std::pow(workspace.b()/2 * workspace_expansion_factor, 2) + 
+            std::pow(vec.z(), 2) / std::pow(workspace.c()/2 * workspace_expansion_factor, 2)) <= 1;
 }
+
 
 bool Leg::isInTaskspaceB(KDL::Vector p_b) {
     return isInTaskspaceL(to_hip_frame(p_b));
@@ -315,7 +319,7 @@ KDL::Path* Leg::line_path() {
     //RCLCPP_INFO(rclcpp::get_logger("line_pat()"), "phi: %f", phi);
     double R = std::numeric_limits<double>::infinity();
     KDL::Frame start_pose = KDL::Frame(KDL::Rotation::Identity(), current_position_b);
-    double max_dist = eta * std::max(workspace.a(), std::max(workspace.b(), workspace.c()));
+    double max_dist = eta * 2 * std::max(workspace.a(), std::max(workspace.b(), workspace.c())); // Double the distance
     KDL::Frame max_end_pose = KDL::Frame(KDL::Rotation::Identity(),
                                            KDL::Vector(max_dist * cos(phi), 
                                                        max_dist * sin(phi),

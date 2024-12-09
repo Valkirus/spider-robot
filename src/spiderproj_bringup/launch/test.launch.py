@@ -37,7 +37,7 @@ def generate_launch_description():
             )
         )
     )
-    
+
     kinematics_node = Node(
         package='spiderproj_kinematics',
         executable='spiderproj_kinematics',
@@ -72,5 +72,5 @@ def generate_launch_description():
     return LaunchDescription([
         global_param_node,
         kinematics_node,
-        teleop_launch_file,
+        teleop_launch_file
     ])

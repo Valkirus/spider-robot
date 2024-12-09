@@ -65,7 +65,7 @@
   <xacro:property name="body_yaw" value="0" />
   <xacro:property name="body_ixx" value="0.00329495565" />
   <xacro:property name="body_iyy" value="0.00422550506" />
-  <xacro:property name="body_izz" value="0.00610423987" />9254901960784314
+  <xacro:property name="body_izz" value="0.00610423987" />
   <xacro:property name="body_ixy" value="-0.00000818428" />
   <xacro:property name="body_ixz" value="-0.00007183633" />
   <xacro:property name="body_iyz" value="-0.00002312133" />
@@ -140,7 +140,7 @@
   <xacro:property name="tibia_R_z" value="0.00028" />
   <xacro:property name="tibia_R_roll" value="0" />
   <xacro:property name="tibia_R_pitch" value="0" />
-  <xacro:property name="tibia_R_yaw" value="0" />install ros2 hunble
+  <xacro:property name="tibia_R_yaw" value="0" />
   <xacro:property name="tibia_R_ixx" value="0.00004499197" />
   <xacro:property name="tibia_R_iyy" value="0.00019412525" />
   <xacro:property name="tibia_R_izz" value="0.00021338222" />

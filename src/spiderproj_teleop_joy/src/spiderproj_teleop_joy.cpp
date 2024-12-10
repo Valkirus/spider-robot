@@ -135,12 +135,9 @@ void TeleopJoy::setDancingPose(double s_xL, double s_yL, double s_xR, double s_y
     if (s_xL != 0.0 || s_yL != 0.0) {
         double center_x = 0;
         double center_y = 0;
-
-        // Calculate the distance from the joystick position (s_xR, s_yR) to the center (127, 127)
         double joystick_distance = sqrt(pow(s_xL - center_x, 2) + pow(s_yL - center_y, 2));
 
-        // Optionally print the distance (for debugging)
-        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Joystick Distance from center: %f", joystick_distance);
+        //RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Joystick Distance from center: %f", joystick_distance);
 
         static double progress = 0.0;
         double frequency = 1.0;  //oscillations per cycle
@@ -205,13 +202,10 @@ void TeleopJoy::setTranslatingPose(double s_xL, double s_yL, double s_xR, double
 }
 
 void TeleopJoy::setMoving(double s_xL, double s_yL, double s_xR, double s_yR) {
-    if (s_xL != 0.0 || s_yL != 0.0) {
-        setOmniTwist(-s_xL, -s_yL);
-    } else if (s_xR != 0.0 || s_yR != 0.0) {
-        setStreamTwist(s_xR, -s_yR); 
+    if (s_xL != 0.0 || s_yL != 0.0 || s_xR != 0.0 || s_yR != 0.0) {
+        setStreamTwist(s_xR, -s_yL);
     } else {
         setStreamTwist(0, -0); 
-        setOmniTwist(0, -0);
     }
 }
 

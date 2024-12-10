@@ -188,8 +188,8 @@ void TeleopJoy::setDancingPose(double s_xL, double s_yL, double s_xR, double s_y
         //RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Interpolated X: %f", interpolated_x);
 
         body_control.body_pose_euler_angles.euler_angles.z = 0.0;
-        body_control.body_pose_euler_angles.euler_angles.y = -interpolated_y_delayed * 0.53;
-        body_control.body_pose_euler_angles.euler_angles.x = -interpolated_x_delayed * 0.53;
+        body_control.body_pose_euler_angles.euler_angles.y = -interpolated_y_delayed * 0.7;
+        body_control.body_pose_euler_angles.euler_angles.x = -interpolated_x_delayed * 0.7;
 
         body_control.body_pose_euler_angles.position.x = interpolated_x * 0.11;
         body_control.body_pose_euler_angles.position.y = interpolated_y * 0.11;

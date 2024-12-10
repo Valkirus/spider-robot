@@ -206,7 +206,7 @@ void TeleopJoy::setTranslatingPose(double s_xL, double s_yL, double s_xR, double
 
 void TeleopJoy::setMoving(double s_xL, double s_yL, double s_xR, double s_yR) {
     if (s_xL != 0.0 || s_yL != 0.0) {
-        setOmniTwist(s_xL, -s_yL);
+        setOmniTwist(-s_xL, -s_yL);
     } else if (s_xR != 0.0 || s_yR != 0.0) {
         setStreamTwist(s_xR, -s_yR); 
     } else {

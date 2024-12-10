@@ -47,9 +47,10 @@ void TeleopJoy::set_params_from_global_param_server(std::shared_future<std::vect
 // sets control flags depending on joy input
 void TeleopJoy::setJoyFlags(const spiderproj_msgs::msg::JoyData::SharedPtr &joy){
     servo_power_flag             = joy->buttons[4];
-    start_command_flag           = joy->buttons[0]; // press
-    omnidirectional_command_flag = joy->buttons[1]; // hold
+    start_command_flag           = joy->buttons[0];
+    is_moving                    = joy->buttons[1];
     is_dancing                   = joy->buttons[3];
+    is_translating               = joy->buttons[2];
 }
 
 // DEFINITIONS OF CONTROL METHODS
@@ -130,16 +131,24 @@ void TeleopJoy::setGaitTripod() {
 
 // find hexapod motion data
 // find body control
-void TeleopJoy::setBodyPose(double s_xR, double s_yR, int R_button_state, bool is_dancing) {
-    //RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Sine interpolated value : %f", sine_interpolated_value);
-    if (is_dancing) {
+void TeleopJoy::setDancingPose(double s_xL, double s_yL, double s_xR, double s_yR) {
+    if (s_xL != 0.0 || s_yL != 0.0) {
+        double center_x = 0;
+        double center_y = 0;
+
+        // Calculate the distance from the joystick position (s_xR, s_yR) to the center (127, 127)
+        double joystick_distance = sqrt(pow(s_xL - center_x, 2) + pow(s_yL - center_y, 2));
+
+        // Optionally print the distance (for debugging)
+        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Joystick Distance from center: %f", joystick_distance);
+
         static double progress = 0.0;
         double frequency = 1.0;  //oscillations per cycle
 
-        double amplitude_y = s_xR * max_body_y_euler;
+        double amplitude_y = s_xL * max_body_y_euler;
         double phase_offset_y = (M_PI / 2); 
 
-        double amplitude_x = s_yR * max_body_z_euler;
+        double amplitude_x = s_yL * max_body_z_euler;
         double phase_offset_x = (M_PI / 2); 
 
         // Calculate sine wave value Y-axis
@@ -162,16 +171,29 @@ void TeleopJoy::setBodyPose(double s_xR, double s_yR, int R_button_state, bool i
         body_control.body_pose_euler_angles.position.x = sine_interpolated_value_y * 0.14;
         body_control.body_pose_euler_angles.position.y = -sine_interpolated_value_x * 0.14;
         body_control.body_pose_euler_angles.position.z = 0.0;
-    }
-    else if (R_button_state == 1.0) {
+    } else if (s_xR != 0.0 || s_yR != 0.0) {
+
+    } else {
         body_control.body_pose_euler_angles.euler_angles.z = 0.0;
         body_control.body_pose_euler_angles.euler_angles.y = 0.0;
         body_control.body_pose_euler_angles.euler_angles.x = 0.0;
 
-        body_control.body_pose_euler_angles.position.x = -s_xR * max_body_x;
-        body_control.body_pose_euler_angles.position.y = s_yR * max_body_y;
+        body_control.body_pose_euler_angles.position.x = 0.0;
+        body_control.body_pose_euler_angles.position.y = 0.0;
         body_control.body_pose_euler_angles.position.z = 0.0;
-    } else {
+    }
+}
+
+void TeleopJoy::setTranslatingPose(double s_xL, double s_yL, double s_xR, double s_yR) {
+    if (s_xL != 0.0 || s_yL != 0.0) {
+        body_control.body_pose_euler_angles.euler_angles.z = 0.0;
+        body_control.body_pose_euler_angles.euler_angles.y = 0.0;
+        body_control.body_pose_euler_angles.euler_angles.x = 0.0;
+
+        body_control.body_pose_euler_angles.position.x = -s_xL * max_body_x;
+        body_control.body_pose_euler_angles.position.y = s_yL * max_body_y;
+        body_control.body_pose_euler_angles.position.z = 0.0;
+    } else if (s_xR != 0.0 || s_yR != 0.0) {
         body_control.body_pose_euler_angles.euler_angles.z = s_yR * max_body_z_euler;
         body_control.body_pose_euler_angles.euler_angles.y = s_xR * max_body_y_euler;
         body_control.body_pose_euler_angles.euler_angles.x = 0.0;
@@ -179,6 +201,25 @@ void TeleopJoy::setBodyPose(double s_xR, double s_yR, int R_button_state, bool i
         body_control.body_pose_euler_angles.position.x = 0.0;
         body_control.body_pose_euler_angles.position.y = 0.0;
         body_control.body_pose_euler_angles.position.z = 0.0;
+    } else {
+        body_control.body_pose_euler_angles.euler_angles.z = 0.0;
+        body_control.body_pose_euler_angles.euler_angles.y = 0.0;
+        body_control.body_pose_euler_angles.euler_angles.x = 0.0;
+
+        body_control.body_pose_euler_angles.position.x = 0.0;
+        body_control.body_pose_euler_angles.position.y = 0.0;
+        body_control.body_pose_euler_angles.position.z = 0.0;
+    }
+}
+
+void TeleopJoy::setMoving(double s_xL, double s_yL, double s_xR, double s_yR) {
+    if (s_xL != 0.0 || s_yL != 0.0) {
+        setOmniTwist(s_xL, -s_yL);
+    } else if (s_xR != 0.0 || s_yR != 0.0) {
+        setStreamTwist(s_xR, -s_yR); 
+    } else {
+        setStreamTwist(0, -0); 
+        setOmniTwist(0, -0);
     }
 }
 
@@ -215,16 +256,31 @@ void TeleopJoy::setOmniTwist(double s_xL, double s_yL) {
 }
 
 void TeleopJoy::sendHexapodMotionData(const spiderproj_msgs::msg::JoyData::SharedPtr joy) {
-    setBodyPose(joy->axes[3],
-                joy->axes[2],
-                joy->buttons[2],
-                is_dancing);
-
+    if (is_dancing) {
+        setDancingPose(joy->axes[3],
+                        joy->axes[2],
+                        joy->axes[1],
+                        joy->axes[0]);
+    } else if (is_translating) {
+        setTranslatingPose(joy->axes[3],
+                        joy->axes[2],
+                        joy->axes[1],
+                        joy->axes[0]);
+    } else if (is_moving) {
+        
+    } else {
+        setMoving(joy->axes[3],
+                    joy->axes[2],
+                    joy->axes[1],
+                    joy->axes[0]);
+    }
     //setBodyTwist(joy->axes[axis_cross_x]);
 
-    omnidirectional_command_flag ?   setOmniTwist   (joy->axes[1], -joy->axes[0]) 
-                                   : setStreamTwist (joy->axes[1], -joy->axes[0]);
+    
 
+    /*omnidirectional_command_flag ?   setOmniTwist   (joy->axes[1], -joy->axes[0]) 
+                                   : setStreamTwist (joy->axes[1], -joy->axes[0]);*/
+    
     hexapod_motion_pub_->publish(hexapod_motion);
     body_control_pub_  ->publish(body_control);
 }
@@ -248,10 +304,10 @@ void TeleopJoy::joyCallback(const spiderproj_msgs::msg::JoyData::SharedPtr joy) 
 
         if (start_flag) {
 
-            if (omnidirectional_command_flag)
+            /*if (omnidirectional_command_flag)
                 setOmnidirectional();
             else
-                setStreamlined();
+                setStreamlined();*/
 
             setGaitTripod();
 

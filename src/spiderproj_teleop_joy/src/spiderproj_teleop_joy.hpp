@@ -36,6 +36,8 @@ private:
     bool start_flag;
     bool imu_flag;
     bool is_dancing;
+    bool is_moving;
+    bool is_translating;
 
     void joyCallback(const spiderproj_msgs::msg::JoyData::SharedPtr);
 
@@ -53,7 +55,9 @@ private:
 
     void sendHexapodMotionData(const spiderproj_msgs::msg::JoyData::SharedPtr);
 
-    void setBodyPose(double, double, int, bool);
+    void setDancingPose(double, double, double, double);
+    void setTranslatingPose(double, double, double, double);
+    void setMoving(double, double, double, double);
     void setBodyTwist(double);
 
     void setStreamTwist(double, double);
@@ -64,7 +68,6 @@ private:
     bool servo_power_on_command_flag;
     bool start_command_flag;
     bool imu_on_off_command_flag;
-    bool omnidirectional_command_flag;
     bool wave_gait_command_flag;
     bool ripple_gait_command_flag;
     bool tripod_gait_command_flag;

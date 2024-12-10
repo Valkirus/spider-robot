@@ -299,7 +299,7 @@ void Kinematics::send_command(int serial_port, uint8_t startIdx, uint8_t count, 
 
     ssize_t bytes_written = write(serial_port, txbuff.data(), txbuff.size());
     if (bytes_written < 0) {
-        RCLCPP_ERROR(this->get_logger(), "Failed to write to serial port");
+        //RCLCPP_ERROR(this->get_logger(), "Failed to write to serial port");
     }
 }
 

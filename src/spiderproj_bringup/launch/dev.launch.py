@@ -46,13 +46,9 @@ def generate_launch_description():
     )
 
     # Teleop Launch File
-    teleop_launch_file = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            os.path.join(
-                get_package_share_directory('spiderproj_bringup'),
-                "launch/testteleop.launch.py"
-            )
-        )
+    teleop_joy = Node(
+        package='spiderproj_teleop_joy',
+        executable='spiderproj_teleop_joy',
     )
 
     # Kinematics Node
@@ -76,5 +72,5 @@ def generate_launch_description():
         joint_state_publisher_node,
         rviz2_node,
         kinematics_node,
-        teleop_launch_file,
+        teleop_joy
     ])

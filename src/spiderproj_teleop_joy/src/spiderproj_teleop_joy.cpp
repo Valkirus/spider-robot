@@ -183,8 +183,8 @@ void TeleopJoy::setDancingPose(double s_xL, double s_yL, double s_xR, double s_y
 
 void TeleopJoy::setTranslatingPose(double s_xL, double s_yL, double s_xR, double s_yR) {
     if (s_xL != 0.0 || s_yL != 0.0 || s_xR != 0.0 || s_yR != 0.0) {
-        body_control.body_pose_euler_angles.euler_angles.z = s_yR * max_body_z_euler;
-        body_control.body_pose_euler_angles.euler_angles.y = -s_xR * max_body_y_euler;
+        body_control.body_pose_euler_angles.euler_angles.z = -s_yR * max_body_z_euler;
+        body_control.body_pose_euler_angles.euler_angles.y = s_xR * max_body_y_euler;
         body_control.body_pose_euler_angles.euler_angles.x = 0.0;
 
         body_control.body_pose_euler_angles.position.x = -s_xL * max_body_x;
@@ -203,7 +203,7 @@ void TeleopJoy::setTranslatingPose(double s_xL, double s_yL, double s_xR, double
 
 void TeleopJoy::setMoving(double s_xL, double s_yL, double s_xR, double s_yR) {
     if (s_xL != 0.0 || s_yL != 0.0 || s_xR != 0.0 || s_yR != 0.0) {
-        setStreamTwist(s_xR, -s_yL);
+        setStreamTwist(s_xR, s_yL);
     } else {
         setStreamTwist(0, -0); 
     }

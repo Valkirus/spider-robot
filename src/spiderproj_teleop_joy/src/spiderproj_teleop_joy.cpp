@@ -133,12 +133,6 @@ void TeleopJoy::setGaitTripod() {
 // find body control
 void TeleopJoy::setDancingPose(double s_xL, double s_yL, double s_xR, double s_yR) {
     if (s_xL != 0.0 || s_yL != 0.0) {
-        double center_x = 0;
-        double center_y = 0;
-        double joystick_distance = sqrt(pow(s_xL - center_x, 2) + pow(s_yL - center_y, 2));
-
-        //RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Joystick Distance from center: %f", joystick_distance);
-
         static double progress = 0.0;
         double frequency = 1.0;  //oscillations per cycle
 
@@ -169,7 +163,11 @@ void TeleopJoy::setDancingPose(double s_xL, double s_yL, double s_xR, double s_y
         body_control.body_pose_euler_angles.position.y = -sine_interpolated_value_x * 0.14;
         body_control.body_pose_euler_angles.position.z = 0.0;
     } else if (s_xR != 0.0 || s_yR != 0.0) {
+        double center_x = 0;
+        double center_y = 0;
+        double joystick_distance = sqrt(pow(s_xR - center_x, 2) + pow(s_yR - center_y, 2));
 
+        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Joystick Distance from center: %f", joystick_distance);
     } else {
         body_control.body_pose_euler_angles.euler_angles.z = 0.0;
         body_control.body_pose_euler_angles.euler_angles.y = 0.0;

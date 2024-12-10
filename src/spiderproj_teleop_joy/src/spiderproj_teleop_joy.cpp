@@ -163,11 +163,38 @@ void TeleopJoy::setDancingPose(double s_xL, double s_yL, double s_xR, double s_y
         body_control.body_pose_euler_angles.position.y = -sine_interpolated_value_x * 0.14;
         body_control.body_pose_euler_angles.position.z = 0.0;
     } else if (s_xR != 0.0 || s_yR != 0.0) {
-        double center_x = 0;
-        double center_y = 0;
+        double center_x = 0.0;
+        double center_y = 0.0;
         double joystick_distance = sqrt(pow(s_xR - center_x, 2) + pow(s_yR - center_y, 2));
+        static double progress = 0.0; 
+        double frequency = 1.0;  // Oscillations per cycle
+        double phase_offset = (M_PI / 2); 
 
-        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Joystick Distance from center: %f", joystick_distance);
+        // Calculate angle from joystick position
+        double angle = atan2(s_yR - center_y, s_xR - center_x);
+
+        // Interpolated position
+        double interpolated_x = joystick_distance * 0.3 * cos(angle + 2.0 * M_PI * frequency * progress);
+        double interpolated_y = joystick_distance * 0.3 * sin(angle + 2.0 * M_PI * frequency * progress);
+
+        double interpolated_x_delayed = joystick_distance * 0.3 * cos(angle + 2.0 * M_PI * frequency * progress + phase_offset);
+        double interpolated_y_delayed = joystick_distance * 0.3 * sin(angle + 2.0 * M_PI * frequency * progress + phase_offset);
+
+        // Update progress
+        progress += 0.04; 
+        if (progress >= 1.0) {
+            progress -= 1.0;
+        }
+        //RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Interpolated X: %f", interpolated_x);
+
+        body_control.body_pose_euler_angles.euler_angles.z = 0.0;
+        body_control.body_pose_euler_angles.euler_angles.y = -interpolated_y_delayed * 0.53;
+        body_control.body_pose_euler_angles.euler_angles.x = -interpolated_x_delayed * 0.53;
+
+        body_control.body_pose_euler_angles.position.x = interpolated_x * 0.11;
+        body_control.body_pose_euler_angles.position.y = interpolated_y * 0.11;
+        body_control.body_pose_euler_angles.position.z = 0.0;
+
     } else {
         body_control.body_pose_euler_angles.euler_angles.z = 0.0;
         body_control.body_pose_euler_angles.euler_angles.y = 0.0;

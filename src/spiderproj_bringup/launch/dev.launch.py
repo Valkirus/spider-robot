@@ -71,6 +71,6 @@ def generate_launch_description():
         robot_state_publisher_node,
         joint_state_publisher_node,
         rviz2_node,
-        kinematics_node,
+        #kinematics_node,
         teleop_joy
     ])
